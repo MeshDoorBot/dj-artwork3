@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Fade (img)",
+    "type": "image",
+    "x": 0,
+    "y": 0,
+    "imageURL": "assets/fade.png",
+    "opacity": 1
+  },
+  {
+    "name": "Line + Site (img)",
+    "type": "image",
+    "x": 0,
+    "y": 0,
+    "imageURL": "assets/line-+-site.png",
+    "opacity": 1
+  },
+  {
+    "name": "Logo White (img)",
+    "type": "image",
+    "x": 0,
+    "y": 0,
+    "imageURL": "assets/logo-white.png",
+    "opacity": 1
+  },
+  {
+    "name": "Now Playing",
+    "type": "text",
+    "x": 72,
+    "y": 839,
+    "size": 48,
+    "color": "white"
+  },
+  {
+    "name": "DJ",
+    "type": "text",
+    "x": 75,
+    "y": 911,
+    "size": 36,
+    "color": "white"
+  },
+  {
+    "name": "Date + A-B",
+    "type": "text",
+    "x": 75,
+    "y": 959,
+    "size": 32,
+    "color": "white"
+  }
+]
