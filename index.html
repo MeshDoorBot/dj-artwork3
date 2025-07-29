@@ -294,9 +294,19 @@ ctx.restore();
           overlays.push({ src: 'assets/line-+-site-story.png', alpha: 1, comp: 'screen' });
         } else {
           // Square: all image layers except logo-white
-          templateLayers.filter(l => l.type === 'image' && !(/logo\s*white/i.test(l.name))).forEach(l => {
-            overlays.push({ src: l.imageURL, alpha: l.opacity||1, comp: 'screen' });
-          });
+        templateLayers
+  .filter(l => l.type === 'image' && !(/logo\s*white/i.test(l.name)))
+  .sort((a, b) => {
+    const isFade = name => name.toLowerCase().includes('fade');
+    const isLineSite = name => name.toLowerCase().includes('line + site');
+    if (isFade(a.name) && isLineSite(b.name)) return -1;
+    if (isLineSite(a.name) && isFade(b.name)) return 1;
+    return 0;
+  })
+  .forEach(l => {
+    overlays.push({ src: l.imageURL, alpha: l.opacity || 1, comp: 'screen' });
+  });
+
           let logoSrc = textColor==='black' ? 'assets/black-mode.png' : 'assets/tracklist-overlay-logo.png';
           overlays.push({ src: logoSrc, alpha: textColor==='black'?1:0.5, comp: 'screen' });
         }
