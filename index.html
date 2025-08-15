@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mesh Radio Artwork Gen</title>
+  <title> Mesh Radio Artwork Gen</title>
   <style>
-    @font-face { font-family: 'NeueHaasDisplayRoman'; src: url('fonts/NeueHaasDisplayRoman.ttf') format('truetype'); font-display: swap; }
-    @font-face { font-family: 'NeueHaasDisplayThin';  src: url('fonts/NeueHaasDisplayThin.ttf')  format('truetype'); font-display: swap; }
-    * { box-sizing: border-box; }
+    @font-face { font-family: 'NeueHaasDisplayRoman'; src: url('fonts/NeueHaasDisplayRoman.ttf') format('truetype'); }
+    @font-face { font-family: 'NeueHaasDisplayThin';  src: url('fonts/NeueHaasDisplayThin.ttf')  format('truetype'); }
     body {
       background: #111;
       color: #fff;
-      font-family: 'NeueHaasDisplayRoman', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: 'NeueHaasDisplayRoman', sans-serif;
       margin: 0;
       padding: 0;
       display: flex;
@@ -23,83 +22,63 @@
       width: 100%;
       max-width: 400px;
       padding: 20px;
+      box-sizing: border-box;
     }
     h1 {
       font-size: 1.5rem;
       margin-bottom: 1rem;
       text-align: center;
-      letter-spacing: 0.3px;
-      font-weight: 600;
     }
     .step { display: none; margin-bottom: 1rem; }
     .step.active { display: block; }
     input[type="text"], textarea, select, button {
-      width: 100%; font-size: 1rem; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: none;
+      width: 100%; font-size: 1rem; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: none;
     }
     textarea { height: 120px; resize: vertical; }
-    button { background: #1db954; color: #fff; cursor: pointer; font-weight: 600; }
+    button { background: #1db954; color: #fff; cursor: pointer; }
     button:disabled { background: #555; cursor: not-allowed; }
-
     .toggle-group {
       display: flex; justify-content: space-between; margin-bottom: 10px;
     }
     .toggle-group label {
-      flex: 1; text-align: center; background: #333; margin: 0 5px; padding: 10px; border-radius: 6px; cursor: pointer; user-select: none;
+      flex: 1; text-align: center; background: #333; margin: 0 5px; padding: 10px; border-radius: 4px; cursor: pointer;
     }
     .toggle-group input { display: none; }
     .toggle-group input:checked + label { background: #1db954; }
-
-    canvas { width: 100%; height: auto; margin-bottom: 10px; border-radius: 8px; background:#000; }
-
-    /* Download/Share buttons side-by-side */
-    .actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    #shareBtn { display: none; } /* only shown on iOS */
+    canvas { width: 100%; height: auto; margin-bottom: 10px; border-radius: 8px; }
     @media(max-width:400px){ .container { padding: 10px; } }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>mesh radio - art gen v1</h1>
-
-    <!-- Step 1: Pick show -->
+    <!-- Steps -->
     <div id="step1" class="step active">
       <select id="showPicker" disabled><option>Loading shows…</option></select>
-    </div>
 
-    <!-- Step 2: Upload -->
+    </div>
     <div id="step2" class="step">
       <input type="file" id="uploadInput" accept="image/*" />
     </div>
-
-    <!-- Step 3: Options -->
     <div id="step3" class="step">
-      <div class="toggle-group">
-        <input type="radio" id="formatSquare" name="format" value="square" checked /><label for="formatSquare">Post</label>
-        <input type="radio" id="formatStory" name="format" value="story" /><label for="formatStory">Story</label>
-      </div>
-      <div class="toggle-group">
-        <input type="radio" id="textWhite" name="textColor" value="white" checked /><label for="textWhite">White Text</label>
-        <input type="radio" id="textBlack" name="textColor" value="black" /><label for="textBlack">Black Text</label>
-      </div>
-      <input type="text" id="customNoteInput" placeholder="Add Guest Here" />
-      <button id="generateBtn" disabled>Generate Artwork</button>
-      <button id="tracklistBtn" disabled>+ Tracklist</button>
-    </div>
+  <div class="toggle-group">
+    <input type="radio" id="formatSquare" name="format" value="square" checked /><label for="formatSquare">Post</label>
+    <input type="radio" id="formatStory" name="format" value="story" /><label for="formatStory">Story</label>
+  </div>
+  <div class="toggle-group">
+    <input type="radio" id="textWhite" name="textColor" value="white" checked /><label for="textWhite">White Text</label>
+    <input type="radio" id="textBlack" name="textColor" value="black" /><label for="textBlack">Black Text</label>
+  </div>
+  <input type="text" id="customNoteInput" placeholder="Add Guest Here" />
+  <button id="generateBtn" disabled>Generate Artwork</button>
+  <button id="tracklistBtn" disabled>+ Tracklist</button>
+</div>
 
-    <!-- Step 4: Canvas + Actions -->
+      
     <div id="step4" class="step">
       <canvas id="artCanvas" width="1080" height="1080"></canvas>
-      <div class="actions">
-        <button id="downloadBtn" disabled>Download</button>
-        <button id="shareBtn" disabled>Share</button>
-      </div>
+      <button id="downloadBtn" disabled>Download</button>
     </div>
-
-    <!-- Step 5: Tracklist -->
     <div id="step5" class="step">
       <textarea id="tracklistInput" placeholder="Paste or type tracklist here…"></textarea>
       <button id="generateTracklistBtn" disabled>Overlay Tracklist</button>
@@ -108,19 +87,16 @@
 
   <script>
     let templateLayers = [], shows = [], uploadedImageDataURL = null;
-    window.extraDJLineOffset = 0;
 
-    // ---------- Loaders ----------
     async function loadFonts() {
       const f1 = new FontFace('NeueHaasDisplayRoman','url(fonts/NeueHaasDisplayRoman.ttf)');
       const f2 = new FontFace('NeueHaasDisplayThin','url(fonts/NeueHaasDisplayThin.ttf)');
-      await Promise.all([f1.load(), f2.load()]);
+      await f1.load(); await f2.load();
       document.fonts.add(f1); document.fonts.add(f2);
     }
 
     async function loadTemplate() {
       const res = await fetch('template.json');
-      if (!res.ok) throw new Error('template.json failed to load');
       templateLayers = await res.json();
     }
 
@@ -128,13 +104,9 @@
       const picker = document.getElementById('showPicker');
       picker.disabled = true; picker.innerHTML = '<option>Loading shows…</option>';
       try {
-        const res = await fetch('https://script.google.com/macros/s/AKfycbw3QgJtZXB48I0BUMpTE5Dlo2kqMReNuD4jbiEVBaB1z49bSgzEkAgixkjHxwTKRwY0/exec', { cache: 'no-store' });
+        const res = await fetch('https://script.google.com/macros/s/AKfycbw3QgJtZXB48I0BUMpTE5Dlo2kqMReNuD4jbiEVBaB1z49bSgzEkAgixkjHxwTKRwY0/exec');
         shows = await res.json();
-      } catch (e) {
-        console.error(e);
-        picker.innerHTML = '<option disabled>Error loading shows</option>';
-        return;
-      }
+      } catch (e) { console.error(e); }
       populateShows(shows);
     }
 
@@ -144,34 +116,17 @@
       list.forEach((s,i) => {
         const d = new Date(s.Date);
         const label = `${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} - ${s['Now Playing']} (${s.DJ})`;
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = label;
-        picker.appendChild(opt);
+        const opt = document.createElement('option'); opt.value = i; opt.textContent = label; picker.appendChild(opt);
       });
       picker.disabled = false;
     }
 
-    // ---------- Utils: reliable centered COVER via source-crop ----------
-    function drawImageCoverSrcCrop(ctx, img, canvasW, canvasH) {
-      const iw = img.naturalWidth, ih = img.naturalHeight;
-      const scale = Math.max(canvasW / iw, canvasH / ih);
-      const sw = canvasW / scale;     // source width to sample
-      const sh = canvasH / scale;     // source height to sample
-      const sx = (iw - sw) / 2;       // center the crop in source image
-      const sy = (ih - sh) / 2;
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasW, canvasH);
-    }
-
-    // ---------- Events ----------
-    document.getElementById('showPicker').addEventListener('change', ()=>{
-      document.getElementById('step2').classList.add('active');
-    });
-
+    // Event handlers
+    
+    document.getElementById('showPicker').addEventListener('change', ()=> document.getElementById('step2').classList.add('active'));
     document.getElementById('uploadInput').addEventListener('change', e => {
       const f = e.target.files[0]; if(!f) return;
-      const fr = new FileReader();
-      fr.onload = ev => {
+      const fr = new FileReader(); fr.onload = ev => {
         uploadedImageDataURL = ev.target.result;
         document.getElementById('step3').classList.add('active');
         document.getElementById('generateBtn').disabled = false;
@@ -179,45 +134,33 @@
       };
       fr.readAsDataURL(f);
     });
+    document.getElementById('generateBtn').addEventListener('click', () => { drawArtwork(); document.getElementById('step4').classList.add('active'); });
+    document.getElementById('tracklistBtn').addEventListener('click', () => document.getElementById('step5').classList.add('active'));
+    document.getElementById('tracklistInput').addEventListener('input', e => document.getElementById('generateTracklistBtn').disabled = !e.target.value.trim());
+    document.getElementById('generateTracklistBtn').addEventListener('click', () => { overlayTracklist(); document.getElementById('step5').classList.remove('active'); });
 
-    document.getElementById('generateBtn').addEventListener('click', () => {
-      drawArtwork();
-      document.getElementById('step4').classList.add('active');
-    });
-
-    document.getElementById('tracklistBtn').addEventListener('click', () => {
-      document.getElementById('step5').classList.add('active');
-    });
-
-    document.getElementById('tracklistInput').addEventListener('input', e => {
-      document.getElementById('generateTracklistBtn').disabled = !e.target.value.trim();
-    });
-
-    document.getElementById('generateTracklistBtn').addEventListener('click', () => {
-      overlayTracklist();
-      document.getElementById('step5').classList.remove('active');
-    });
-
-    // ---------- Main drawing ----------
     function drawArtwork() {
       const fmt = document.querySelector('input[name="format"]:checked').value;
       const textColor = document.querySelector('input[name="textColor"]:checked').value;
       const canvas = document.getElementById('artCanvas');
       canvas.width = 1080; canvas.height = fmt === 'story' ? 1920 : 1080;
       const ctx = canvas.getContext('2d'), cw = canvas.width, ch = canvas.height, extraH = ch - 1080;
-
       ctx.clearRect(0,0,cw,ch);
-      ctx.fillStyle = '#000'; ctx.fillRect(0,0,cw,ch);
-
       const bg = new Image(); bg.src = uploadedImageDataURL;
       bg.onload = () => {
-        // ✅ centered cover with no drift
-        drawImageCoverSrcCrop(ctx, bg, cw, ch);
-
-        // Prepare template images (ordering rules unchanged)
+        // clear previous artwork to prepare full-canvas blur
+        ctx.clearRect(0, 0, cw, ch);
+        const scale = Math.max(cw/bg.naturalWidth, ch/bg.naturalHeight);
+        const sw = cw/scale, sh = ch/scale;
+        const sx = (bg.naturalWidth - sw)/2, sy = (bg.naturalHeight - sh)/2;
+        ctx.drawImage(bg,sx,sy,sw,sh,0,0,cw,ch);
+        if(fmt==='square' && textColor==='black') { drawTextAndOverlay(fmt,cw,ch,extraH,textColor); return; }
+        let cnt = 0;
         let imgs = templateLayers.filter(l => l.type === 'image' && !(fmt === 'square' && /logo\s*white/i.test(l.name)));
 
+        // In post mode, ensure "Line + Site (img)" is drawn after "Fade (img)"
         if (fmt === 'square') {
+          // Put "Fade (img)" first, then "Line + Site (img)" directly after
           const fade = imgs.find(l => l.name === 'Fade (img)');
           const line = imgs.find(l => l.name === 'Line + Site (img)');
           const others = imgs.filter(l => l.name !== 'Fade (img)' && l.name !== 'Line + Site (img)');
@@ -226,6 +169,7 @@
           if (line) imgs.push(line);
           imgs = imgs.concat(others);
         } else {
+          // In story mode, push Fade to the end
           imgs = imgs.sort((a, b) => {
             if (a.name === 'Fade (img)') return 1;
             if (b.name === 'Fade (img)') return -1;
@@ -233,109 +177,239 @@
           });
         }
 
-        let loaded = 0;
-        const targetCount = imgs.length;
+        imgs.forEach(l => {
+          const img = new Image(); img.src = (fmt==='story'&&l.name==='Line + Site (img)') ? 'assets/line-+-site-story.png' : l.imageURL;
+          img.onload = () => {
+            ctx.globalAlpha = l.opacity || 1;
+            if(fmt==='story' && l.name==='Line + Site (img)') ctx.drawImage(img,0,0,cw,ch);
+            else { const x=l.x||0, y=(l.y||0)+((fmt==='story'&&['Fade (img)','Line + Site (img)'].includes(l.name))?extraH:0); ctx.drawImage(img,x,y); }
+            if(++cnt===imgs.length) drawTextAndOverlay(fmt,cw,ch,extraH,textColor);
+          };
+          img.onerror = () => { if(++cnt===imgs.length) drawTextAndOverlay(fmt,cw,ch,extraH,textColor); };
+        });
+      };
+    }
 
-        if (targetCount === 0) {
-          drawTextAndOverlay(fmt, cw, ch, extraH, textColor);
-          return;
+    function drawTextAndOverlay(fmt,cw,ch,extraH,textColor) {
+      const ctx = document.getElementById('artCanvas').getContext('2d');
+      const lines = templateLayers.filter(l=>l.type==='text');
+      const show = shows[document.getElementById('showPicker').value];
+      const gN = fmt==='story'?100:0, npN=fmt==='story'?50:0, dN=fmt==='story'?30:0, sM=fmt==='story'?1.8:1;
+      lines.forEach(l=>{
+        let txt = '';
+        const key = l.name.toLowerCase();
+        if(key.includes('now playing')) txt = show['Now Playing'];
+        else if(key==='dj') {
+          const note = document.getElementById('customNoteInput').value.trim();
+          txt = show['DJ'] + (note ? ' + ' + note : '');
+        }
+        else if(key.includes('date')) txt = new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' @ ' + show['A-B'];
+        const fs = (l.size||36)*sM;
+        const fam = (key==='dj'||key.includes('date'))?'NeueHaasDisplayThin':'NeueHaasDisplayRoman';
+        ctx.font = `${fs}px '${fam}'`;
+        ctx.fillStyle = textColor;
+        let y = l.y + extraH + fs - gN;
+        if(fmt==='story'){ if(key.includes('now playing')) y -= npN; if (key.includes('date')) {
+          y += dN;
+          if (fmt === 'story') y += (window.extraDJLineOffset || 0);
+        }
+        }
+        if(fmt==='square') y -= 17;
+        if (key === 'dj' && fmt === 'story') {
+          const maxWidth = cw - 100;
+          if (ctx.measureText(txt).width > maxWidth) {
+            const [dj, ...rest] = txt.split(' + ');
+            const note = rest.join(' + ');
+
+            ctx.fillText(dj, l.x + 12, y);
+            ctx.fillText('+ ' + note, l.x + 12, y + fs + 5);
+
+            // flag that extra line was drawn so we can offset the date later
+            window.extraDJLineOffset = fs + 10;
+
+            return; // skip rest of loop for this line
+          } else {
+            window.extraDJLineOffset = 0;
+          }
         }
 
-        imgs.forEach(l => {
-          const img = new Image();
-          img.src = (fmt==='story' && l.name==='Line + Site (img)') ? 'assets/line-+-site-story.png' : l.imageURL;
+        ctx.fillText(txt, l.x + 12, y);
+
+      });
+      if(fmt==='square'){
+        const ov = new Image(); ov.src = textColor==='black'?'assets/black-mode.png':'assets/logo-for-post.png';
+        ov.onload = () => {
+          ctx.save();
+          if(textColor==='black'){ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';}
+          else{ctx.globalAlpha=0.5;ctx.globalCompositeOperation='screen';}
+          ctx.drawImage(ov,0,0,cw,ch);
+          ctx.restore();
+          document.getElementById('downloadBtn').disabled = false;
+
+          // ----- iPhone-safe download (replaces old anchor click) -----
+          const show = shows[document.getElementById('showPicker').value];
+          const dj = (show['DJ'] || 'dj').replace(/[^a-z0-9]/gi, '_');
+          const date = new Date(show.Date).toISOString().split('T')[0];
+          const format = document.querySelector('input[name="format"]:checked').value;
+          const filename = `meshradio_${dj}_${date}_${format}.png`;
+          document.getElementById('downloadBtn').onclick = () => downloadCanvasIOSSafe(filename);
+          // ------------------------------------------------------------
+        };
+      } else {
+        // Story mode: just enable download using the same iOS-safe handler
+        document.getElementById('downloadBtn').disabled=false;
+        const show = shows[document.getElementById('showPicker').value];
+        const dj = (show['DJ'] || 'dj').replace(/[^a-z0-9]/gi, '_');
+        const date = new Date(show.Date).toISOString().split('T')[0];
+        const format = document.querySelector('input[name="format"]:checked').value;
+        const filename = `meshradio_${dj}_${date}_${format}.png`;
+        document.getElementById('downloadBtn').onclick = () => downloadCanvasIOSSafe(filename);
+      }
+    }
+
+    function overlayTracklist() {
+      const fmt = document.querySelector('input[name="format"]:checked').value;
+      const textColor = document.querySelector('input[name="textColor"]:checked').value;
+      const canvas = document.getElementById('artCanvas');
+      const ctx = canvas.getContext('2d');
+      const cw = canvas.width, ch = canvas.height;
+      const extraH = ch - 1080;
+
+      // Blur background
+      const bg = new Image(); bg.src = uploadedImageDataURL;
+      bg.onload = () => {
+        const scale = Math.max(cw/bg.naturalWidth, ch/bg.naturalHeight);
+        const sw = cw/scale, sh = ch/scale;
+        const sx = (bg.naturalWidth - sw)/2, sy = (bg.naturalHeight - sh)/2;
+        ctx.save(); 
+        ctx.filter = 'blur(30px)'; 
+        ctx.drawImage(bg, sx, sy, sw, sh, -30, -30, cw + 60, ch + 60); 
+        ctx.restore();
+
+        // Dark overlay
+        ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,cw,ch);
+
+        // Prepare overlays
+        let overlays = [];
+        if (fmt === 'story') {
+          overlays.push({ src: 'assets/line-+-site-story.png', alpha: 1, comp: 'screen' });
+        } else {
+          // Square: all image layers except logo-white
+          templateLayers.filter(l => l.type === 'image' && !(/logo\s*white/i.test(l.name))).forEach(l => {
+            overlays.push({ src: l.imageURL, alpha: l.opacity||1, comp: 'screen' });
+          });
+          let logoSrc = textColor==='black' ? 'assets/black-mode.png' : 'assets/tracklist-overlay-logo.png';
+          overlays.push({ src: logoSrc, alpha: textColor==='black'?1:0.5, comp: 'screen' });
+        }
+
+        // Draw overlays sequentially, then tracklist
+        let done = 0;
+        overlays.forEach(o => {
+          const img = new Image(); img.src = o.src;
           img.onload = () => {
-            ctx.save();
-            ctx.globalAlpha = l.opacity || 1;
-            if (fmt==='story' && l.name==='Line + Site (img)') {
-              ctx.drawImage(img,0,0,cw,ch);
-            } else {
-              const x = l.x || 0;
-              const y = (l.y || 0) + ((fmt==='story' && ['Fade (img)','Line + Site (img)'].includes(l.name)) ? extraH : 0);
-              ctx.drawImage(img, x, y);
+            ctx.save(); ctx.globalAlpha=o.alpha; ctx.globalCompositeOperation=o.comp;
+            ctx.drawImage(img,0,0,cw,ch); ctx.restore();
+            if (++done === overlays.length) {
+              
+              // Draw show info at top
+              const show = shows[document.getElementById('showPicker').value];
+              ctx.save();
+              ctx.fillStyle = textColor;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'top';
+              // Now Playing
+              ctx.font = '36px NeueHaasDisplayRoman';
+              ctx.fillText(show['Now Playing'], cw/2, 20);
+              // DJ
+              ctx.font = '28px NeueHaasDisplayThin';
+              const note = document.getElementById('customNoteInput').value.trim();
+              const djLine = show['DJ'] + (note ? ' + ' + note : '');
+              ctx.font = '28px NeueHaasDisplayThin';
+              ctx.fillText(djLine, cw/2, 20 + 36 + 5);
+
+              // Date and A-B
+              ctx.font = '24px NeueHaasDisplayThin';
+              const dateStr = new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' @ ' + show['A-B'];
+              ctx.fillText(dateStr, cw/2, 20 + 36 + 5 + 28 + 5);
+              ctx.restore();
+
+              // Then centered, left-aligned tracklist
+              drawClippedTracklist(ctx, cw, ch);
+              document.getElementById('downloadBtn').disabled = false;
+
+              // Keep the same iOS-safe download for tracklist renders too
+              const dj = (show['DJ'] || 'dj').replace(/[^a-z0-9]/gi, '_');
+              const date = new Date(show.Date).toISOString().split('T')[0];
+              const format = document.querySelector('input[name="format"]:checked').value;
+              const filename = `meshradio_${dj}_${date}_${format}.png`;
+              document.getElementById('downloadBtn').onclick = () => downloadCanvasIOSSafe(filename);
             }
-            ctx.restore();
-            if (++loaded === targetCount) drawTextAndOverlay(fmt, cw, ch, extraH, textColor);
           };
           img.onerror = () => {
-            if (++loaded === targetCount) drawTextAndOverlay(fmt, cw, ch, extraH, textColor);
+            if (++done === overlays.length) {
+              
+              // Draw show info at top
+              const show = shows[document.getElementById('showPicker').value];
+              ctx.save();
+              ctx.fillStyle = textColor;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'top';
+              // Now Playing
+              ctx.font = '36px NeueHaasDisplayRoman';
+              ctx.fillText(show['Now Playing'], cw/2, 20);
+              // DJ
+              ctx.font = '28px NeueHaasDisplayThin';
+              const note = document.getElementById('customNoteInput').value.trim();
+              const djLine = show['DJ'] + (note ? ' + ' + note : '');
+              ctx.font = '28px NeueHaasDisplayThin';
+              ctx.fillText(djLine, cw/2, 20 + 36 + 5);
+
+              // Date and A-B
+              ctx.font = '24px NeueHaasDisplayThin';
+              const dateStr = new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' @ ' + show['A-B'];
+              ctx.fillText(dateStr, cw/2, 20 + 36 + 5 + 28 + 5);
+              ctx.restore();
+
+              drawClippedTracklist(ctx, cw, ch);
+              document.getElementById('downloadBtn').disabled = false;
+
+              const dj = (show['DJ'] || 'dj').replace(/[^a-z0-9]/gi, '_');
+              const date = new Date(show.Date).toISOString().split('T')[0];
+              const format = document.querySelector('input[name="format"]:checked').value;
+              const filename = `meshradio_${dj}_${date}_${format}.png`;
+              document.getElementById('downloadBtn').onclick = () => downloadCanvasIOSSafe(filename);
+            }
           };
         });
       };
     }
 
-    function drawTextAndOverlay(fmt, cw, ch, extraH, textColor) {
-      const ctx = document.getElementById('artCanvas').getContext('2d');
-      const lines = templateLayers.filter(l=>l.type==='text');
-      const show = shows[document.getElementById('showPicker').value];
-      const gN = fmt==='story'?100:0, npN=fmt==='story'?50:0, dN=fmt==='story'?30:0, sM=fmt==='story'?1.8:1;
-
-      window.extraDJLineOffset = 0;
-
-      lines.forEach(l=>{
-        const key = l.name.toLowerCase();
-        let txt = '';
-        if (key.includes('now playing')) {
-          txt = show['Now Playing'];
-        } else if (key === 'dj') {
-          const note = document.getElementById('customNoteInput').value.trim();
-          txt = show['DJ'] + (note ? ' + ' + note : '');
-        } else if (key.includes('date')) {
-          txt = new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' @ ' + show['A-B'];
-        } else {
-          return;
-        }
-
-        const fs = (l.size || 36) * sM;
-        const fam = (key==='dj'||key.includes('date')) ? 'NeueHaasDisplayThin' : 'NeueHaasDisplayRoman';
-        ctx.font = `${fs}px '${fam}'`;
-        ctx.textBaseline = 'alphabetic';
-        ctx.textAlign = 'left';
-
-        const color = (textColor === 'black') ? '#000' : '#fff';
-        let y = l.y + extraH + fs - gN;
-        if (fmt==='story') {
-          if (key.includes('now playing')) y -= npN;
-          if (key.includes('date')) y += dN + (window.extraDJLineOffset || 0);
-        }
-        if (fmt==='square') y -= 17;
-
-        const x = (l.x || 0) + 12;
-
-        if (key === 'dj') {
-          const maxWidth = cw - 100;
-          const extra = drawDjWithNote(ctx, x, y, txt, fs, maxWidth, color, fmt === 'story');
-          if (extra) window.extraDJLineOffset = extra;
-        } else {
-          ctx.fillStyle = color;
-          ctx.fillText(txt, x, y);
-        }
-      });
-
-      if (fmt === 'square') {
-        const ov = new Image();
-        ov.src = (textColor === 'black') ? 'assets/black-mode.png' : 'assets/logo-for-post.png';
-        ov.onload = () => {
-          const ctx = document.getElementById('artCanvas').getContext('2d');
-          ctx.save();
-          if (textColor === 'black') {
-            ctx.globalAlpha = 1;
-            ctx.globalCompositeOperation = 'source-over';
-          } else {
-            ctx.globalAlpha = 0.5;
-            ctx.globalCompositeOperation = 'screen';
-          }
-          ctx.drawImage(ov, 0, 0, cw, ch);
-          ctx.restore();
-          enableActions();
-        };
-        ov.onerror = enableActions;
-      } else {
-        enableActions();
+    function drawClippedTracklist(ctx, cw, ch) {
+      const lines = document.getElementById('tracklistInput').value.split('\n').filter(l => l.trim());
+      if (!lines.length) return;
+      let fontSize = 30;
+      let lineHeight = fontSize * 1.2;
+      if (lines.length * lineHeight > ch * 0.8) {
+        fontSize = Math.floor((ch * 0.8 / lines.length) / 1.2);
+        lineHeight = fontSize * 1.2;
       }
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.font = `${fontSize}px NeueHaasDisplayRoman`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      const widths = lines.map(l => ctx.measureText(l).width);
+      const maxW = Math.max(...widths);
+      const startX = (cw - maxW) / 2;
+      const totalH = lineHeight * lines.length;
+      const startY = (ch - totalH) / 2;
+      lines.forEach((l, i) => {
+        ctx.fillText(l, startX, startY + i * lineHeight);
+      });
+      ctx.restore();
     }
 
-    // ---------- iPhone-safe download/share helpers ----------
+    // ---------- iPhone-safe download helpers (only change) ----------
     function isIOS() {
       const ua = navigator.userAgent || navigator.vendor || window.opera;
       const iOS = /iPad|iPhone|iPod/.test(ua);
@@ -363,12 +437,23 @@
       const canvas = document.getElementById('artCanvas');
       const blob = await canvasToBlob(canvas, 'image/png', 1);
       if (!blob) return;
-      const url = URL.createObjectURL(blob);
 
+      // Prefer native share on iOS (smoother save to Photos)
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'Mesh Radio Artwork', text: filename });
+          return;
+        } catch (_) { /* user cancelled or share unsupported; fall through */ }
+      }
+
+      const url = URL.createObjectURL(blob);
       if (isIOS()) {
-        window.open(url, '_blank', 'noopener,noreferrer'); // long-press → Save Image
+        // Open PNG so the user can long-press → Save Image
+        window.open(url, '_blank', 'noopener,noreferrer');
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       } else {
+        // Desktop-friendly direct download
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
@@ -377,195 +462,10 @@
         setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
       }
     }
+    // ---------------------------------------------------------------
 
-    async function shareCanvasIOSSafe(filename) {
-      const canvas = document.getElementById('artCanvas');
-      const blob = await canvasToBlob(canvas, 'image/png', 1);
-      if (!blob) return;
-      const file = new File([blob], filename, { type: 'image/png' });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: 'Mesh Radio Artwork', text: filename });
-          return;
-        } catch (err) { /* cancel or fail: fall through */ }
-      }
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener,noreferrer');
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    }
-
-    function enableActions() {
-      const dlBtn = document.getElementById('downloadBtn');
-      const shareBtn = document.getElementById('shareBtn');
-
-      const show = shows[document.getElementById('showPicker').value] || {};
-      const dj = (show['DJ'] || 'dj').replace(/[^a-z0-9]/gi, '_');
-      const date = show.Date ? new Date(show.Date).toISOString().split('T')[0] : 'date';
-      const format = document.querySelector('input[name="format"]:checked').value;
-      const filename = `meshradio_${dj}_${date}_${format}.png`;
-
-      dlBtn.disabled = false;
-      dlBtn.onclick = () => downloadCanvasIOSSafe(filename);
-
-      if (isIOS()) {
-        shareBtn.style.display = 'inline-block';
-        shareBtn.disabled = false;
-        shareBtn.onclick = () => shareCanvasIOSSafe(filename);
-      } else {
-        shareBtn.style.display = 'none';
-        shareBtn.disabled = true;
-        shareBtn.onclick = null;
-      }
-    }
-
-    // ---------- Tracklist overlay ----------
-    function overlayTracklist() {
-      const fmt = document.querySelector('input[name="format"]:checked').value;
-      const textColor = document.querySelector('input[name="textColor"]:checked').value;
-      const canvas = document.getElementById('artCanvas');
-      const ctx = canvas.getContext('2d');
-      const cw = canvas.width, ch = canvas.height;
-
-      const bg = new Image(); bg.src = uploadedImageDataURL;
-      bg.onload = () => {
-        // ✅ same centered cover for blurred background
-        drawImageCoverSrcCrop(ctx, bg, cw, ch);
-
-        // Blur the already-drawn cover (cheaper and keeps framing)
-        ctx.save();
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.filter = 'blur(30px)';
-        const snapshot = canvas.toDataURL(); // quick blur hack to avoid edges
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0,0,cw,ch);
-          ctx.drawImage(img, -30, -30, cw + 60, ch + 60); // slight overscan
-          ctx.filter = 'none';
-
-          // Dark overlay
-          ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,cw,ch);
-
-          // Proceed with overlays/text
-          drawTracklistOverlaysAndText();
-        };
-        img.src = snapshot;
-        ctx.restore();
-
-        function drawTracklistOverlaysAndText() {
-          let overlays = [];
-          if (fmt === 'story') {
-            overlays.push({ src: 'assets/line-+-site-story.png', alpha: 1, comp: 'screen' });
-          } else {
-            templateLayers
-              .filter(l => l.type === 'image' && !(/logo\s*white/i.test(l.name)))
-              .forEach(l => overlays.push({ src: l.imageURL, alpha: l.opacity||1, comp: 'screen' }));
-            const logoSrc = (textColor==='black') ? 'assets/black-mode.png' : 'assets/tracklist-overlay-logo.png';
-            overlays.push({ src: logoSrc, alpha: (textColor==='black')?1:0.5, comp: 'screen' });
-          }
-
-          let done = 0;
-          const finish = () => {
-            const show = shows[document.getElementById('showPicker').value];
-            const color = (textColor === 'black') ? '#000' : '#fff';
-
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-
-            ctx.fillStyle = color;
-            ctx.font = '36px NeueHaasDisplayRoman';
-            ctx.fillText(show['Now Playing'], cw/2, 20);
-
-            const note = document.getElementById('customNoteInput').value.trim();
-            const djLine = show['DJ'] + (note ? ' + ' + note : '');
-            ctx.font = '28px NeueHaasDisplayThin';
-
-            const parts = djLine.split(' + ');
-            const dj = parts[0];
-            const noteOnly = parts.slice(1).join(' + ');
-            const djW = ctx.measureText(dj).width;
-            const plusW = ctx.measureText(' + ').width;
-            const noteW = ctx.measureText(noteOnly).width;
-            const totalW = noteOnly ? (djW + plusW + noteW) : djW;
-            let startX = (cw - totalW) / 2;
-
-            ctx.fillStyle = color;
-            ctx.fillText(dj, startX, 20 + 36 + 5);
-            startX += djW;
-            if (noteOnly) {
-              ctx.fillStyle = color;
-              ctx.fillText(' + ', startX, 20 + 36 + 5);
-              startX += plusW;
-              ctx.fillStyle = '#cfcfcf';
-              ctx.fillText(noteOnly, startX, 20 + 36 + 5);
-            }
-
-            ctx.fillStyle = color;
-            ctx.font = '24px NeueHaasDisplayThin';
-            const dateStr = new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' @ ' + show['A-B'];
-            ctx.fillText(dateStr, cw/2, 20 + 36 + 5 + 28 + 5);
-            ctx.restore();
-
-            drawClippedTracklist(ctx, cw, ch);
-            enableActions();
-          };
-
-          if (overlays.length === 0) { finish(); return; }
-
-          overlays.forEach(o => {
-            const img = new Image(); img.src = o.src;
-            img.onload = () => {
-              ctx.save(); ctx.globalAlpha=o.alpha; ctx.globalCompositeOperation=o.comp;
-              ctx.drawImage(img,0,0,cw,ch); ctx.restore();
-              if (++done === overlays.length) finish();
-            };
-            img.onerror = () => { if (++done === overlays.length) finish(); };
-          });
-        }
-      };
-    }
-
-    function drawClippedTracklist(ctx, cw, ch) {
-      const lines = document.getElementById('tracklistInput').value
-        .split('\n').map(l => l.trim()).filter(Boolean);
-      if (!lines.length) return;
-
-      let fontSize = 30;
-      let lineHeight = Math.round(fontSize * 1.2);
-      const maxBlockHeight = Math.floor(ch * 0.8);
-
-      if (lines.length * lineHeight > maxBlockHeight) {
-        fontSize = Math.floor((maxBlockHeight / lines.length) / 1.2);
-        lineHeight = Math.round(fontSize * 1.2);
-      }
-
-      ctx.save();
-      ctx.fillStyle = '#fff';
-      ctx.font = `${fontSize}px NeueHaasDisplayRoman`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-
-      const widths = lines.map(l => ctx.measureText(l).width);
-      const maxW = Math.max(...widths);
-      const startX = Math.round((cw - maxW) / 2);
-      const totalH = lineHeight * lines.length;
-      const startY = Math.round((ch - totalH) / 2);
-
-      lines.forEach((l, i) => {
-        ctx.fillText(l, startX, startY + i * lineHeight);
-      });
-      ctx.restore();
-    }
-
-    // ---------- Boot ----------
     window.addEventListener('load', () => {
-      if (isIOS()) document.getElementById('shareBtn').style.display = 'inline-block';
-
-      loadFonts()
-        .then(() => loadTemplate())
-        .then(loadShowData)
-        .catch(err => console.error(err));
+      loadFonts().then(() => loadTemplate().then(loadShowData));
     });
   </script>
 </body>
