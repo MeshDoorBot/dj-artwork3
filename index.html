@@ -152,54 +152,15 @@
       picker.disabled = false;
     }
 
-    // ---------- Small utils ----------
-    function drawImageCover(ctx, img, dx, dy, dWidth, dHeight) {
+    // ---------- Utils: reliable centered COVER via source-crop ----------
+    function drawImageCoverSrcCrop(ctx, img, canvasW, canvasH) {
       const iw = img.naturalWidth, ih = img.naturalHeight;
-      const r = Math.max(dWidth/iw, dHeight/ih);
-      const nw = iw * r, nh = ih * r;
-      const sx = (nw - dWidth) / 2;
-      const sy = (nh - dHeight) / 2;
-      ctx.drawImage(img, -sx + dx, -sy + dy, nw, nh);
-    }
-
-    function splitDjAndNote(raw) {
-      const idx = raw.indexOf(' + ');
-      if (idx === -1) return { dj: raw, note: '' };
-      return { dj: raw.slice(0, idx), note: raw.slice(idx + 3) };
-    }
-
-    function drawDjWithNote(ctx, baseX, baseY, text, fs, maxWidth, color, isStoryWrap=false) {
-      const { dj, note } = splitDjAndNote(text);
-      const gap = ' + ';
-      ctx.font = `${fs}px 'NeueHaasDisplayThin'`;
-      const djW = ctx.measureText(dj).width;
-      const gapW = ctx.measureText(gap).width;
-      const noteW = ctx.measureText(note).width;
-      const totalW = note ? (djW + gapW + noteW) : djW;
-
-      if (note && isStoryWrap && totalW > maxWidth) {
-        ctx.fillStyle = color;
-        ctx.fillText(dj, baseX, baseY);
-        const secondY = baseY + fs + 5;
-        ctx.fillStyle = color;
-        ctx.fillText('+ ', baseX, secondY);
-        ctx.fillStyle = '#cfcfcf';
-        ctx.fillText(note, baseX + ctx.measureText('+ ').width, secondY);
-        return fs + 10;
-      } else {
-        let x = baseX;
-        ctx.fillStyle = color;
-        ctx.fillText(dj, x, baseY);
-        x += djW;
-        if (note) {
-          ctx.fillStyle = color;
-          ctx.fillText(gap, x, baseY);
-          x += gapW;
-          ctx.fillStyle = '#cfcfcf';
-          ctx.fillText(note, x, baseY);
-        }
-        return 0;
-      }
+      const scale = Math.max(canvasW / iw, canvasH / ih);
+      const sw = canvasW / scale;     // source width to sample
+      const sh = canvasH / scale;     // source height to sample
+      const sx = (iw - sw) / 2;       // center the crop in source image
+      const sy = (ih - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasW, canvasH);
     }
 
     // ---------- Events ----------
@@ -250,11 +211,10 @@
 
       const bg = new Image(); bg.src = uploadedImageDataURL;
       bg.onload = () => {
-        ctx.save();
-        ctx.translate(cw/2, ch/2);
-        drawImageCover(ctx, bg, 0, 0, cw, ch);
-        ctx.restore();
+        // ✅ centered cover with no drift
+        drawImageCoverSrcCrop(ctx, bg, cw, ch);
 
+        // Prepare template images (ordering rules unchanged)
         let imgs = templateLayers.filter(l => l.type === 'image' && !(fmt === 'square' && /logo\s*white/i.test(l.name)));
 
         if (fmt === 'square') {
@@ -406,11 +366,9 @@
       const url = URL.createObjectURL(blob);
 
       if (isIOS()) {
-        // iOS: open in new tab; user can long-press → Save Image
-        window.open(url, '_blank', 'noopener,noreferrer');
+        window.open(url, '_blank', 'noopener,noreferrer'); // long-press → Save Image
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       } else {
-        // Desktop: standard download
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
@@ -428,23 +386,15 @@
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({
-            files: [file],
-            title: 'Mesh Radio Artwork',
-            text: filename
-          });
+          await navigator.share({ files: [file], title: 'Mesh Radio Artwork', text: filename });
           return;
-        } catch (err) {
-          // user cancelled or share failed – fall through
-        }
+        } catch (err) { /* cancel or fail: fall through */ }
       }
-      // Fallback for iOS without canShare: open in new tab to save manually
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank', 'noopener,noreferrer');
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     }
 
-    // Enable/attach actions after render
     function enableActions() {
       const dlBtn = document.getElementById('downloadBtn');
       const shareBtn = document.getElementById('shareBtn');
@@ -458,7 +408,6 @@
       dlBtn.disabled = false;
       dlBtn.onclick = () => downloadCanvasIOSSafe(filename);
 
-      // Only show Share on iOS/iPadOS
       if (isIOS()) {
         shareBtn.style.display = 'inline-block';
         shareBtn.disabled = false;
@@ -480,81 +429,100 @@
 
       const bg = new Image(); bg.src = uploadedImageDataURL;
       bg.onload = () => {
+        // ✅ same centered cover for blurred background
+        drawImageCoverSrcCrop(ctx, bg, cw, ch);
+
+        // Blur the already-drawn cover (cheaper and keeps framing)
         ctx.save();
-        ctx.translate(cw/2, ch/2);
+        ctx.globalCompositeOperation = 'source-over';
         ctx.filter = 'blur(30px)';
-        drawImageCover(ctx, bg, 0, 0, cw + 60, ch + 60);
+        const snapshot = canvas.toDataURL(); // quick blur hack to avoid edges
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0,0,cw,ch);
+          ctx.drawImage(img, -30, -30, cw + 60, ch + 60); // slight overscan
+          ctx.filter = 'none';
+
+          // Dark overlay
+          ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,cw,ch);
+
+          // Proceed with overlays/text
+          drawTracklistOverlaysAndText();
+        };
+        img.src = snapshot;
         ctx.restore();
 
-        ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,cw,ch);
-
-        let overlays = [];
-        if (fmt === 'story') {
-          overlays.push({ src: 'assets/line-+-site-story.png', alpha: 1, comp: 'screen' });
-        } else {
-          templateLayers
-            .filter(l => l.type === 'image' && !(/logo\s*white/i.test(l.name)))
-            .forEach(l => overlays.push({ src: l.imageURL, alpha: l.opacity||1, comp: 'screen' }));
-          const logoSrc = (textColor==='black') ? 'assets/black-mode.png' : 'assets/tracklist-overlay-logo.png';
-          overlays.push({ src: logoSrc, alpha: (textColor==='black')?1:0.5, comp: 'screen' });
-        }
-
-        let done = 0;
-        const finish = () => {
-          const show = shows[document.getElementById('showPicker').value];
-          const color = (textColor === 'black') ? '#000' : '#fff';
-
-          ctx.save();
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-
-          ctx.fillStyle = color;
-          ctx.font = '36px NeueHaasDisplayRoman';
-          ctx.fillText(show['Now Playing'], cw/2, 20);
-
-          const note = document.getElementById('customNoteInput').value.trim();
-          const djLine = show['DJ'] + (note ? ' + ' + note : '');
-          ctx.font = '28px NeueHaasDisplayThin';
-
-          const { dj, note: noteOnly } = splitDjAndNote(djLine);
-          const djW = ctx.measureText(dj).width;
-          const plusW = ctx.measureText(' + ').width;
-          const noteW = ctx.measureText(noteOnly).width;
-          const totalW = noteOnly ? (djW + plusW + noteW) : djW;
-          let startX = (cw - totalW) / 2;
-
-          ctx.fillStyle = color;
-          ctx.fillText(dj, startX, 20 + 36 + 5);
-          startX += djW;
-          if (noteOnly) {
-            ctx.fillStyle = color;
-            ctx.fillText(' + ', startX, 20 + 36 + 5);
-            startX += plusW;
-            ctx.fillStyle = '#cfcfcf';
-            ctx.fillText(noteOnly, startX, 20 + 36 + 5);
+        function drawTracklistOverlaysAndText() {
+          let overlays = [];
+          if (fmt === 'story') {
+            overlays.push({ src: 'assets/line-+-site-story.png', alpha: 1, comp: 'screen' });
+          } else {
+            templateLayers
+              .filter(l => l.type === 'image' && !(/logo\s*white/i.test(l.name)))
+              .forEach(l => overlays.push({ src: l.imageURL, alpha: l.opacity||1, comp: 'screen' }));
+            const logoSrc = (textColor==='black') ? 'assets/black-mode.png' : 'assets/tracklist-overlay-logo.png';
+            overlays.push({ src: logoSrc, alpha: (textColor==='black')?1:0.5, comp: 'screen' });
           }
 
-          ctx.fillStyle = color;
-          ctx.font = '24px NeueHaasDisplayThin';
-          const dateStr = new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' @ ' + show['A-B'];
-          ctx.fillText(dateStr, cw/2, 20 + 36 + 5 + 28 + 5);
-          ctx.restore();
+          let done = 0;
+          const finish = () => {
+            const show = shows[document.getElementById('showPicker').value];
+            const color = (textColor === 'black') ? '#000' : '#fff';
 
-          drawClippedTracklist(ctx, cw, ch);
-          enableActions();
-        };
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
 
-        if (overlays.length === 0) { finish(); return; }
+            ctx.fillStyle = color;
+            ctx.font = '36px NeueHaasDisplayRoman';
+            ctx.fillText(show['Now Playing'], cw/2, 20);
 
-        overlays.forEach(o => {
-          const img = new Image(); img.src = o.src;
-          img.onload = () => {
-            ctx.save(); ctx.globalAlpha=o.alpha; ctx.globalCompositeOperation=o.comp;
-            ctx.drawImage(img,0,0,cw,ch); ctx.restore();
-            if (++done === overlays.length) finish();
+            const note = document.getElementById('customNoteInput').value.trim();
+            const djLine = show['DJ'] + (note ? ' + ' + note : '');
+            ctx.font = '28px NeueHaasDisplayThin';
+
+            const parts = djLine.split(' + ');
+            const dj = parts[0];
+            const noteOnly = parts.slice(1).join(' + ');
+            const djW = ctx.measureText(dj).width;
+            const plusW = ctx.measureText(' + ').width;
+            const noteW = ctx.measureText(noteOnly).width;
+            const totalW = noteOnly ? (djW + plusW + noteW) : djW;
+            let startX = (cw - totalW) / 2;
+
+            ctx.fillStyle = color;
+            ctx.fillText(dj, startX, 20 + 36 + 5);
+            startX += djW;
+            if (noteOnly) {
+              ctx.fillStyle = color;
+              ctx.fillText(' + ', startX, 20 + 36 + 5);
+              startX += plusW;
+              ctx.fillStyle = '#cfcfcf';
+              ctx.fillText(noteOnly, startX, 20 + 36 + 5);
+            }
+
+            ctx.fillStyle = color;
+            ctx.font = '24px NeueHaasDisplayThin';
+            const dateStr = new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' @ ' + show['A-B'];
+            ctx.fillText(dateStr, cw/2, 20 + 36 + 5 + 28 + 5);
+            ctx.restore();
+
+            drawClippedTracklist(ctx, cw, ch);
+            enableActions();
           };
-          img.onerror = () => { if (++done === overlays.length) finish(); };
-        });
+
+          if (overlays.length === 0) { finish(); return; }
+
+          overlays.forEach(o => {
+            const img = new Image(); img.src = o.src;
+            img.onload = () => {
+              ctx.save(); ctx.globalAlpha=o.alpha; ctx.globalCompositeOperation=o.comp;
+              ctx.drawImage(img,0,0,cw,ch); ctx.restore();
+              if (++done === overlays.length) finish();
+            };
+            img.onerror = () => { if (++done === overlays.length) finish(); };
+          });
+        }
       };
     }
 
@@ -592,7 +560,6 @@
 
     // ---------- Boot ----------
     window.addEventListener('load', () => {
-      // Reveal Share only on iOS/iPadOS from the start (kept disabled until render)
       if (isIOS()) document.getElementById('shareBtn').style.display = 'inline-block';
 
       loadFonts()
