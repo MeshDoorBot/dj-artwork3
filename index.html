@@ -470,3 +470,82 @@
   </script>
 </body>
 </html>
+
+<!-- 🔲 Overlay Generator -->
+<button id="openOverlayBtn" style="
+  position:fixed; bottom:20px; right:20px;
+  padding:12px 18px; border:none; border-radius:6px;
+  background:#1db954; color:#fff; font-size:14px; cursor:pointer; z-index:9999;">
+  Open Overlay Mode
+</button>
+
+<div id="overlayMode" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95);
+  z-index:10000; color:#fff; font-family:sans-serif;
+  display:flex; flex-direction:column; align-items:center; padding:20px; overflow:auto;">
+  <button id="closeOverlayBtn" style="
+    align-self:flex-end; background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">
+    ✕
+  </button>
+  <h2 style="margin:10px 0;">Overlay Generator</h2>
+
+  <div style="display:flex; gap:10px; margin-bottom:10px;">
+    <button class="overlay-format" data-format="square">Post</button>
+    <button class="overlay-format" data-format="portrait">Portrait</button>
+    <button class="overlay-format" data-format="story">Story</button>
+  </div>
+
+  <canvas id="overlayCanvas" width="1080" height="1080" style="background:transparent; max-width:90%; border:1px solid #333; border-radius:8px;"></canvas>
+  <button id="downloadOverlayBtn" style="
+    margin-top:15px; padding:10px 16px; background:#1db954; border:none; border-radius:4px; cursor:pointer; color:#fff;">
+    Download Overlay
+  </button>
+</div>
+
+<script>
+  const overlayCanvas = document.getElementById('overlayCanvas');
+  const octx = overlayCanvas.getContext('2d');
+  const assets = {
+    fade: 'assets/fade.png',
+    lineSite: 'assets/line-+-site.png',
+    lineSiteStory: 'assets/line-+-site-story.png',
+    logo: 'assets/logo-for-post.png'
+  };
+
+  document.getElementById('openOverlayBtn').onclick = () => {
+    document.getElementById('overlayMode').style.display = 'flex';
+  };
+  document.getElementById('closeOverlayBtn').onclick = () => {
+    document.getElementById('overlayMode').style.display = 'none';
+  };
+
+  document.querySelectorAll('.overlay-format').forEach(btn=>{
+    btn.onclick=()=> drawOverlay(btn.dataset.format);
+  });
+
+  function drawOverlay(fmt){
+    overlayCanvas.width=1080;
+    overlayCanvas.height=(fmt==='story')?1920:(fmt==='portrait'?1350:1080);
+    octx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+
+    let overlays=[];
+    if(fmt==='square'){ overlays.push(assets.fade,assets.lineSite,assets.logo); }
+    else if(fmt==='portrait'){ overlays.push(assets.fade,assets.lineSiteStory); }
+    else if(fmt==='story'){ overlays.push(assets.fade,assets.lineSiteStory,assets.logo); }
+
+    let loaded=0;
+    overlays.forEach(src=>{
+      const img=new Image(); img.src=src;
+      img.onload=()=>{ octx.drawImage(img,0,0,overlayCanvas.width,overlayCanvas.height);
+        if(++loaded===overlays.length){ console.log("Overlay ready:",fmt); }
+      }
+    });
+  }
+
+  document.getElementById('downloadOverlayBtn').onclick=()=>{
+    const url=overlayCanvas.toDataURL('image/png');
+    const a=document.createElement('a');
+    a.href=url; a.download='meshradio_overlay.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+</script>
