@@ -3,132 +3,36 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>Mesh Radio Artwork Gen v1.5</title>
+<title>Mesh Radio Artwork Gen v1.6</title>
 <style>
-  @font-face {
-    font-family: 'NeueHaasDisplayRoman';
-    src: url('fonts/NeueHaasDisplayRoman.ttf') format('truetype');
-  }
-  @font-face {
-    font-family: 'NeueHaasDisplayThin';
-    src: url('fonts/NeueHaasDisplayThin.ttf') format('truetype');
-  }
+@font-face{font-family:'NeueHaasDisplayRoman';src:url('fonts/NeueHaasDisplayRoman.ttf')format('truetype');}
+@font-face{font-family:'NeueHaasDisplayThin';src:url('fonts/NeueHaasDisplayThin.ttf')format('truetype');}
 
-  :root {
-    --mesh-green: #1db954;
-    --mesh-bg: #111;
-  }
-
-  body {
-    background: var(--mesh-bg);
-    color: #fff;
-    font-family: 'NeueHaasDisplayRoman', sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-  }
-
-  .container {
-    width: 100%;
-    max-width: 400px;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    text-align: center;
-  }
-
-  .step {
-    display: none;
-    margin-bottom: 1rem;
-  }
-
-  .step.active { display: block; }
-
-  input[type="text"],
-  textarea,
-  select,
-  button {
-    width: 100%;
-    font-size: 1rem;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    border: none;
-    box-sizing: border-box;
-  }
-
-  textarea {
-    height: 120px;
-    resize: vertical;
-  }
-
-  button {
-    background: var(--mesh-green);
-    color: #fff;
-    cursor: pointer;
-    font-family: inherit;
-  }
-
-  button:disabled {
-    background: #555;
-    cursor: not-allowed;
-  }
-
-  .toggle-group {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-
-  .toggle-group label {
-    flex: 1;
-    text-align: center;
-    background: #333;
-    margin: 0 5px;
-    padding: 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.95rem;
-  }
-
-  .toggle-group input {
-    display: none;
-  }
-
-  .toggle-group input:checked + label {
-    background: var(--mesh-green);
-  }
-
-  canvas {
-    width: 100%;
-    height: auto;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    background: #000;
-  }
-
-  @media(max-width:400px){
-    .container { padding: 10px; }
-  }
+:root{--mesh-green:#1db954;--mesh-bg:#111;}
+body{background:var(--mesh-bg);color:#fff;font-family:'NeueHaasDisplayRoman',sans-serif;margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+.container{width:100%;max-width:400px;padding:20px;box-sizing:border-box;}
+h1{text-align:center;font-size:1.5rem;margin-bottom:1rem;}
+.step{display:none;margin-bottom:1rem;}
+.step.active{display:block;}
+input[type="text"],textarea,select,button{width:100%;font-size:1rem;padding:10px;margin-bottom:10px;border:none;border-radius:4px;box-sizing:border-box;}
+textarea{height:120px;resize:vertical;}
+button{background:var(--mesh-green);color:#fff;cursor:pointer;font-family:inherit;}
+button:disabled{background:#555;cursor:not-allowed;}
+.toggle-group{display:flex;justify-content:space-between;margin-bottom:10px;}
+.toggle-group label{flex:1;text-align:center;background:#333;margin:0 5px;padding:10px;border-radius:4px;cursor:pointer;font-size:.95rem;}
+.toggle-group input{display:none;}
+.toggle-group input:checked+label{background:var(--mesh-green);}
+canvas{width:100%;height:auto;margin-bottom:10px;border-radius:8px;background:#000;}
+@media(max-width:400px){.container{padding:10px;}}
 </style>
 </head>
 <body>
-
 <div class="container">
-  <h1>mesh radio – art gen v1.5</h1>
+  <h1>mesh radio – art gen v1.6</h1>
 
   <!-- STEP 1 -->
   <div id="step1" class="step active">
-    <select id="showPicker" disabled>
-      <option>Loading shows…</option>
-    </select>
+    <select id="showPicker" disabled><option>Loading shows…</option></select>
   </div>
 
   <!-- STEP 2 -->
@@ -141,22 +45,17 @@
     <div class="toggle-group">
       <input type="radio" id="formatSquare" name="format" value="square" checked />
       <label for="formatSquare">Post</label>
-
       <input type="radio" id="formatPortrait" name="format" value="portrait" />
       <label for="formatPortrait">Portrait</label>
-
       <input type="radio" id="formatStory" name="format" value="story" />
       <label for="formatStory">Story</label>
     </div>
-
     <div class="toggle-group">
       <input type="radio" id="textWhite" name="textColor" value="white" checked />
       <label for="textWhite">White Text</label>
-
       <input type="radio" id="textBlack" name="textColor" value="black" />
       <label for="textBlack">Black Text</label>
     </div>
-
     <input type="text" id="customNoteInput" placeholder="Add Guest Here" />
     <button id="generateBtn" disabled>Generate Artwork</button>
     <button id="tracklistBtn" disabled>+ Tracklist</button>
@@ -175,22 +74,22 @@
   </div>
 </div>
 
-<!-- JS starts next -->
 <script>
+
 let templateLayers = [], shows = [], uploadedImageDataURL = null;
 
 // ---------- FONT + TEMPLATE + DATA ----------
-async function loadFonts() {
+async function loadFonts(){
   const f1 = new FontFace('NeueHaasDisplayRoman','url(fonts/NeueHaasDisplayRoman.ttf)');
   const f2 = new FontFace('NeueHaasDisplayThin','url(fonts/NeueHaasDisplayThin.ttf)');
   await f1.load(); await f2.load();
   document.fonts.add(f1); document.fonts.add(f2);
 }
-async function loadTemplate() {
+async function loadTemplate(){
   const res = await fetch('template.json');
   templateLayers = await res.json();
 }
-async function loadShowData() {
+async function loadShowData(){
   const picker = document.getElementById('showPicker');
   picker.disabled = true; picker.innerHTML = '<option>Loading shows…</option>';
   try {
@@ -199,29 +98,29 @@ async function loadShowData() {
   } catch (e) { console.error(e); }
   populateShows(shows);
 }
-function populateShows(list) {
+function populateShows(list){
   const picker = document.getElementById('showPicker');
   picker.innerHTML = '<option disabled selected>Select a show</option>';
   list.forEach((s,i)=>{
-    const d=new Date(s.Date);
-    const label=`${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} - ${s['Now Playing']} (${s.DJ})`;
-    const opt=document.createElement('option');
-    opt.value=i; opt.textContent=label;
+    const d = new Date(s.Date);
+    const label = `${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} - ${s['Now Playing']} (${s.DJ})`;
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = label;
     picker.appendChild(opt);
   });
-  picker.disabled=false;
+  picker.disabled = false;
 }
 
 // ---------- STEP FLOW ----------
 document.getElementById('showPicker').addEventListener('change',()=>document.getElementById('step2').classList.add('active'));
 document.getElementById('uploadInput').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const fr=new FileReader();
-  fr.onload=ev=>{
-    uploadedImageDataURL=ev.target.result;
+  const f = e.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  fr.onload = ev=>{
+    uploadedImageDataURL = ev.target.result;
     document.getElementById('step3').classList.add('active');
-    document.getElementById('generateBtn').disabled=false;
-    document.getElementById('tracklistBtn').disabled=false;
+    document.getElementById('generateBtn').disabled = false;
+    document.getElementById('tracklistBtn').disabled = false;
   };
   fr.readAsDataURL(f);
 });
@@ -232,69 +131,64 @@ document.getElementById('generateTracklistBtn').addEventListener('click',()=>{ov
 
 // ---------- DRAW ARTWORK ----------
 function drawArtwork(){
-  const fmt=document.querySelector('input[name="format"]:checked').value;
-  const textColor=document.querySelector('input[name="textColor"]:checked').value;
-  const canvas=document.getElementById('artCanvas');
+  const fmt = document.querySelector('input[name="format"]:checked').value;
+  const textColor = document.querySelector('input[name="textColor"]:checked').value;
+  const canvas = document.getElementById('artCanvas');
 
+  // Format-specific dimensions
   if(fmt==='story'){canvas.width=1080;canvas.height=1920;}
   else if(fmt==='portrait'){canvas.width=1080;canvas.height=1350;}
   else{canvas.width=1080;canvas.height=1080;}
 
-  const ctx=canvas.getContext('2d');
-  const cw=canvas.width, ch=canvas.height, extraH=ch-1080;
+  const ctx = canvas.getContext('2d');
+  const cw = canvas.width, ch = canvas.height, extraH = ch - 1080;
   ctx.clearRect(0,0,cw,ch);
 
-  const bg=new Image(); bg.src=uploadedImageDataURL;
-  bg.onload=()=>{
-    const scale=Math.max(cw/bg.naturalWidth,ch/bg.naturalHeight);
-    const sw=cw/scale, sh=ch/scale;
-    const sx=(bg.naturalWidth-sw)/2, sy=(bg.naturalHeight-sh)/2;
+  const bg = new Image(); bg.src = uploadedImageDataURL;
+  bg.onload = ()=>{
+    const scale = Math.max(cw/bg.naturalWidth, ch/bg.naturalHeight);
+    const sw = cw/scale, sh = ch/scale;
+    const sx = (bg.naturalWidth - sw)/2, sy = (bg.naturalHeight - sh)/2;
     ctx.drawImage(bg,sx,sy,sw,sh,0,0,cw,ch);
 
-    let imgs=templateLayers.filter(l=>l.type==='image'&&!(fmt==='square'&&/logo\s*white/i.test(l.name)));
-
-    if(fmt==='square'||fmt==='portrait'){
-      const fade=imgs.find(l=>l.name==='Fade (img)');
-      const line=imgs.find(l=>l.name==='Line + Site (img)');
-      const others=imgs.filter(l=>!['Fade (img)','Line + Site (img)'].includes(l.name));
-      imgs=[]; if(fade) imgs.push(fade); if(line) imgs.push(line); imgs=imgs.concat(others);
-    }else if(fmt==='story'){
-      imgs=imgs.sort((a,b)=>{
-        if(a.name==='Fade (img)')return 1;
-        if(b.name==='Fade (img)')return -1;
-        return 0;
-      });
-    }
+    // ensure Fade always below Line + Site
+    let imgs = templateLayers.filter(l=>l.type==='image');
+    const fade = imgs.find(l=>l.name==='Fade (img)');
+    const line = imgs.find(l=>l.name==='Line + Site (img)');
+    const others = imgs.filter(l=>!['Fade (img)','Line + Site (img)','Logo White (img)'].includes(l.name));
+    imgs=[]; if(fade) imgs.push(fade); if(line) imgs.push(line); imgs = imgs.concat(others);
 
     let cnt=0;
     imgs.forEach(l=>{
-      const img=new Image();
-      img.src=(fmt==='story'&&l.name==='Line + Site (img)')?'assets/line-+-site-story.png':l.imageURL;
-      img.onload=()=>{
-        ctx.globalAlpha=l.opacity||1;
-        let x=l.x||0; let y=l.y||0;
-        if(fmt==='story'&&['Fade (img)','Line + Site (img)'].includes(l.name))y+=extraH;
-        else if(fmt==='portrait')y+=extraH/2;
+      const img = new Image();
+      img.src = (fmt==='story'&&l.name==='Line + Site (img)') ? 'assets/line-+-site-story.png' : l.imageURL;
+      img.onload = ()=>{
+        ctx.globalAlpha = l.opacity || 1;
+        let x = l.x || 0; let y = l.y || 0;
+
+        if(fmt==='story'&&['Fade (img)','Line + Site (img)'].includes(l.name)) y += extraH;
+        if(fmt==='portrait'){const imgH = img.height; y = ch - imgH;} // bottom align for portrait
+
         ctx.drawImage(img,x,y);
-        if(++cnt===imgs.length)drawTextAndOverlay(fmt,cw,ch,extraH,textColor);
+        if(++cnt===imgs.length) drawTextAndOverlay(fmt,cw,ch,extraH,textColor);
       };
-      img.onerror=()=>{if(++cnt===imgs.length)drawTextAndOverlay(fmt,cw,ch,extraH,textColor);};
+      img.onerror = ()=>{if(++cnt===imgs.length) drawTextAndOverlay(fmt,cw,ch,extraH,textColor);};
     });
   };
 }
 
-// ---------- DRAW TEXT + OVERLAYS ----------
+// ---------- DRAW TEXT + GLASS LOGO ----------
 function drawTextAndOverlay(fmt,cw,ch,extraH,textColor){
-  const ctx=document.getElementById('artCanvas').getContext('2d');
-  const lines=templateLayers.filter(l=>l.type==='text');
-  const show=shows[document.getElementById('showPicker').value];
-  const scaleM=(fmt==='story'?1.8:(fmt==='portrait'?1.2:1));
-  const yShift=(fmt==='portrait'?extraH/2:extraH);
+  const ctx = document.getElementById('artCanvas').getContext('2d');
+  const lines = templateLayers.filter(l=>l.type==='text');
+  const show = shows[document.getElementById('showPicker').value];
+  const scaleM = (fmt==='story'?1.8:(fmt==='portrait'?1.2:1));
+  const yShift = (fmt==='portrait'?extraH/2:extraH);
 
   lines.forEach(l=>{
     let txt='';
     const key=l.name.toLowerCase();
-    if(key.includes('now playing'))txt=show['Now Playing'];
+    if(key.includes('now playing')) txt = show['Now Playing'];
     else if(key==='dj'){
       const note=document.getElementById('customNoteInput').value.trim();
       txt=show['DJ']+(note?' + '+note:'');
@@ -309,16 +203,23 @@ function drawTextAndOverlay(fmt,cw,ch,extraH,textColor){
     ctx.fillText(txt,(l.x||0)+12,(l.y||0)+fs+yShift-(fmt==='story'?100:0));
   });
 
-  const ov=new Image();
-  ov.src=textColor==='black'?'assets/black-mode.png':'assets/logo-for-post.png';
+  // --- Single glass-morphism logo top-right ---
+  const ov = new Image();
+  ov.src='assets/logo-for-post.png';
   ov.onload=()=>{
     ctx.save();
-    ctx.globalAlpha=textColor==='black'?1:0.5;
-    ctx.globalCompositeOperation=textColor==='black'?'source-over':'screen';
-    ctx.drawImage(ov,0,0,cw,ch);
+    const size=180,margin=40;
+    const x=cw-size-margin,y=margin;
+    ctx.globalAlpha=0.25;
+    ctx.fillStyle='rgba(255,255,255,0.15)';
+    ctx.filter='blur(10px)';
+    ctx.fillRect(x-20,y-20,size+40,size+40);
+    ctx.filter='none';
+    ctx.globalAlpha=0.6;
+    ctx.drawImage(ov,x,y,size,size);
     ctx.restore();
-    document.getElementById('downloadBtn').disabled=false;
 
+    document.getElementById('downloadBtn').disabled=false;
     const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
     const date=new Date(show.Date).toISOString().split('T')[0];
     const format=fmt;
@@ -333,25 +234,33 @@ function overlayTracklist(){
   const textColor=document.querySelector('input[name="textColor"]:checked').value;
   const canvas=document.getElementById('artCanvas');
   const ctx=canvas.getContext('2d');
-  const cw=canvas.width, ch=canvas.height;
-  const extraH=ch-1080;
+  const cw=canvas.width,ch=canvas.height;
 
+  // Blur background
   const bg=new Image(); bg.src=uploadedImageDataURL;
   bg.onload=()=>{
     const scale=Math.max(cw/bg.naturalWidth,ch/bg.naturalHeight);
-    const sw=cw/scale, sh=ch/scale;
-    const sx=(bg.naturalWidth-sw)/2, sy=(bg.naturalHeight-sh)/2;
-    ctx.save(); ctx.filter='blur(30px)';
+    const sw=cw/scale,sh=ch/scale;
+    const sx=(bg.naturalWidth-sw)/2,sy=(bg.naturalHeight-sh)/2;
+    ctx.save();
+    ctx.filter='blur(30px)';
     ctx.drawImage(bg,sx,sy,sw,sh,-30,-30,cw+60,ch+60);
     ctx.restore();
-    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,cw,ch);
 
+    // Dark overlay
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.fillRect(0,0,cw,ch);
+
+    // Layer overlays (fade first, line top)
     let overlays=[];
     if(fmt==='story'){
+      overlays.push({src:'assets/fade.png',alpha:1,comp:'screen'});
       overlays.push({src:'assets/line-+-site-story.png',alpha:1,comp:'screen'});
-    }else{
-      templateLayers.filter(l=>l.type==='image'&&!(/logo\s*white/i.test(l.name)))
-        .forEach(l=>overlays.push({src:l.imageURL,alpha:l.opacity||1,comp:'screen'}));
+    } else {
+      const fade=templateLayers.find(l=>l.name==='Fade (img)');
+      const line=templateLayers.find(l=>l.name==='Line + Site (img)');
+      if(fade)overlays.push({src:fade.imageURL,alpha:fade.opacity||1,comp:'screen'});
+      if(line)overlays.push({src:line.imageURL,alpha:line.opacity||1,comp:'screen'});
       const logoSrc=textColor==='black'?'assets/black-mode.png':'assets/tracklist-overlay-logo.png';
       overlays.push({src:logoSrc,alpha:textColor==='black'?1:0.5,comp:'screen'});
     }
@@ -361,7 +270,8 @@ function overlayTracklist(){
       const img=new Image(); img.src=o.src;
       img.onload=()=>{
         ctx.save(); ctx.globalAlpha=o.alpha; ctx.globalCompositeOperation=o.comp;
-        ctx.drawImage(img,0,0,cw,ch); ctx.restore();
+        ctx.drawImage(img,0,ch-img.height,img.width,img.height); // hug bottom
+        ctx.restore();
         if(++done===overlays.length)drawTracklistInfo(ctx,cw,ch,textColor,fmt);
       };
       img.onerror=()=>{if(++done===overlays.length)drawTracklistInfo(ctx,cw,ch,textColor,fmt);};
@@ -369,6 +279,7 @@ function overlayTracklist(){
   };
 }
 
+// ---------- DRAW TRACKLIST INFO ----------
 function drawTracklistInfo(ctx,cw,ch,textColor,fmt){
   const show=shows[document.getElementById('showPicker').value];
   ctx.save();
@@ -384,8 +295,10 @@ function drawTracklistInfo(ctx,cw,ch,textColor,fmt){
   const dateStr=new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' @ '+show['A-B'];
   ctx.fillText(dateStr,cw/2,61+33);
   ctx.restore();
+
   drawClippedTracklist(ctx,cw,ch);
   document.getElementById('downloadBtn').disabled=false;
+
   const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
   const date=new Date(show.Date).toISOString().split('T')[0];
   const format=document.querySelector('input[name="format"]:checked').value;
@@ -393,11 +306,11 @@ function drawTracklistInfo(ctx,cw,ch,textColor,fmt){
   document.getElementById('downloadBtn').onclick=()=>downloadCanvasIOSSafe(filename);
 }
 
+// ---------- RENDER TRACKLIST TEXT ----------
 function drawClippedTracklist(ctx,cw,ch){
   const lines=document.getElementById('tracklistInput').value.split('\n').filter(l=>l.trim());
   if(!lines.length)return;
-  let fontSize=30;
-  let lineHeight=fontSize*1.2;
+  let fontSize=30,lineHeight=fontSize*1.2;
   if(lines.length*lineHeight>ch*0.8){
     fontSize=Math.floor((ch*0.8/lines.length)/1.2);
     lineHeight=fontSize*1.2;
@@ -458,3 +371,4 @@ window.addEventListener('load',()=>{loadFonts().then(()=>loadTemplate().then(loa
 </script>
 </body>
 </html>
+
