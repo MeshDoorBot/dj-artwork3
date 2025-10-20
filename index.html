@@ -103,7 +103,8 @@ function populateShows(list){
   list.forEach((s,i)=>{
     const d=new Date(s.Date);
     const label=`${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} - ${s['Now Playing']} (${s.DJ})`;
-    const opt=document.createElement('option');opt.value=i;opt.textContent=label;
+    const opt=document.createElement('option');
+    opt.value=i;opt.textContent=label;
     picker.appendChild(opt);
   });
   picker.disabled=false;
@@ -133,7 +134,7 @@ function drawArtwork(){
   const textColor=document.querySelector('input[name="textColor"]:checked').value;
   const canvas=document.getElementById('artCanvas');
 
-  // format sizes
+  // Canvas size per format
   if(fmt==='story'){canvas.width=1080;canvas.height=1920;}
   else if(fmt==='portrait'){canvas.width=1080;canvas.height=1350;}
   else{canvas.width=1080;canvas.height=1080;}
@@ -149,23 +150,22 @@ function drawArtwork(){
     const sx=(bg.naturalWidth-sw)/2,sy=(bg.naturalHeight-sh)/2;
     ctx.drawImage(bg,sx,sy,sw,sh,0,0,cw,ch);
 
-    // Layer order: Fade under Line
-    let imgs=templateLayers.filter(l=>l.type==='image');
-    const fade=imgs.find(l=>l.name==='Fade (img)');
-    const line=imgs.find(l=>l.name==='Line + Site (img)');
-    const others=imgs.filter(l=>!['Fade (img)','Line + Site (img)','Logo White (img)'].includes(l.name));
-    imgs=[];if(fade)imgs.push(fade);if(line)imgs.push(line);imgs=imgs.concat(others);
+    // keep only Fade, Line, Logo in that order
+    const fade=templateLayers.find(l=>/fade/i.test(l.name));
+    const line=templateLayers.find(l=>/line\s*\+\s*site/i.test(l.name));
+    const logo=templateLayers.find(l=>/logo/i.test(l.name));
+    const others=templateLayers.filter(l=>l.type==='image'&&![/fade/i,/line\s*\+\s*site/i,/logo/i].some(r=>r.test(l.name)));
+    const imgs=[fade,line,logo,...others].filter(Boolean);
 
     let loaded=0;
     imgs.forEach(l=>{
       const img=new Image();
-      img.src=(fmt==='story'&&l.name==='Line + Site (img)')?'assets/line-+-site-story.png':l.imageURL;
+      img.src=(fmt==='story'&&/line\s*\+\s*site/i.test(l.name))?'assets/line-+-site-story.png':l.imageURL;
       img.onload=()=>{
         ctx.globalAlpha=l.opacity||1;
-        let x=l.x||0;let y=l.y||0;
-
-        if(fmt==='story'&&['Fade (img)','Line + Site (img)'].includes(l.name)) y+=extraH;
-        else if(fmt==='portrait'){y=ch-img.height;} // bottom hug
+        let x=l.x||0,y=l.y||0;
+        if(fmt==='story'&&/fade|line\s*\+\s*site/i.test(l.name)) y+=extraH;
+        else if(fmt==='portrait'){y=ch-img.height;} // bottom-hug PNGs
         ctx.drawImage(img,x,y);
         if(++loaded===imgs.length)drawTextAndOverlay(fmt,cw,ch,extraH,textColor);
       };
@@ -174,7 +174,7 @@ function drawArtwork(){
   };
 }
 
-// ---------- DRAW TEXT + LOGO (portrait fix + glass morphism) ----------
+// ---------- DRAW TEXT (portrait fix, no JS-logo) ----------
 function drawTextAndOverlay(fmt,cw,ch,extraH,textColor){
   const ctx=document.getElementById('artCanvas').getContext('2d');
   const lines=templateLayers.filter(l=>l.type==='text');
@@ -200,84 +200,19 @@ function drawTextAndOverlay(fmt,cw,ch,extraH,textColor){
 
     let y=(l.y||0)+fs;
     if(fmt==='story'){y+=shift-140;}
-    else if(fmt==='portrait'){y+=shift+120;} // text sits lower
+    else if(fmt==='portrait'){y+=shift+120;} // pushed lower for portrait
     else{y+=shift-20;}
     ctx.fillText(txt,(l.x||0)+12,y);
   });
 
-  // Glass morphism logo top-right
-  const ov=new Image();ov.src='assets/logo-for-post.png';
-  ov.onload=()=>{
-    ctx.save();
-    const size=180,margin=40;
-    const x=cw-size-margin,y=margin;
-    ctx.globalAlpha=0.25;
-    ctx.fillStyle='rgba(255,255,255,0.15)';
-    ctx.filter='blur(10px)';
-    ctx.fillRect(x-20,y-20,size+40,size+40);
-    ctx.filter='none';
-    ctx.globalAlpha=0.6;
-    ctx.drawImage(ov,x,y,size,size);
-    ctx.restore();
-
-    document.getElementById('downloadBtn').disabled=false;
-    const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
-    const date=new Date(show.Date).toISOString().split('T')[0];
-    const filename=`meshradio_${dj}_${date}_${fmt}.png`;
-    document.getElementById('downloadBtn').onclick=()=>downloadCanvasIOSSafe(filename);
-  };
+  // enable download
+  const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
+  const date=new Date(show.Date).toISOString().split('T')[0];
+  const filename=`meshradio_${dj}_${date}_${fmt}.png`;
+  document.getElementById('downloadBtn').disabled=false;
+  document.getElementById('downloadBtn').onclick=()=>downloadCanvasIOSSafe(filename);
 }
-// ---------- TRACKLIST OVERLAY ----------
-function overlayTracklist(){
-  const fmt=document.querySelector('input[name="format"]:checked').value;
-  const textColor=document.querySelector('input[name="textColor"]:checked').value;
-  const canvas=document.getElementById('artCanvas');
-  const ctx=canvas.getContext('2d');
-  const cw=canvas.width,ch=canvas.height;
 
-  const bg=new Image(); bg.src=uploadedImageDataURL;
-  bg.onload=()=>{
-    const scale=Math.max(cw/bg.naturalWidth,ch/bg.naturalHeight);
-    const sw=cw/scale,sh=ch/scale;
-    const sx=(bg.naturalWidth-sw)/2,sy=(bg.naturalHeight-sh)/2;
-
-    // blurred bg
-    ctx.save();ctx.filter='blur(30px)';
-    ctx.drawImage(bg,sx,sy,sw,sh,-30,-30,cw+60,ch+60);
-    ctx.restore();
-
-    // dark overlay
-    ctx.fillStyle='rgba(0,0,0,0.55)';
-    ctx.fillRect(0,0,cw,ch);
-
-    // overlay images (fade first, line top)
-    let overlays=[];
-    if(fmt==='story'){
-      overlays.push({src:'assets/fade.png',alpha:1,comp:'screen'});
-      overlays.push({src:'assets/line-+-site-story.png',alpha:1,comp:'screen'});
-    }else{
-      const fade=templateLayers.find(l=>l.name==='Fade (img)');
-      const line=templateLayers.find(l=>l.name==='Line + Site (img)');
-      if(fade)overlays.push({src:fade.imageURL,alpha:fade.opacity||1,comp:'screen'});
-      if(line)overlays.push({src:line.imageURL,alpha:line.opacity||1,comp:'screen'});
-      const logoSrc=textColor==='black'?'assets/black-mode.png':'assets/tracklist-overlay-logo.png';
-      overlays.push({src:logoSrc,alpha:textColor==='black'?1:0.5,comp:'screen'});
-    }
-
-    let done=0;
-    overlays.forEach(o=>{
-      const img=new Image();img.src=o.src;
-      img.onload=()=>{
-        ctx.save();
-        ctx.globalAlpha=o.alpha;ctx.globalCompositeOperation=o.comp;
-        ctx.drawImage(img,0,ch-img.height,img.width,img.height); // bottom-hug
-        ctx.restore();
-        if(++done===overlays.length)drawTracklistInfo(ctx,cw,ch,textColor,fmt);
-      };
-      img.onerror=()=>{if(++done===overlays.length)drawTracklistInfo(ctx,cw,ch,textColor,fmt);};
-    });
-  };
-}
 
 // ---------- DRAW TRACKLIST INFO ----------
 function drawTracklistInfo(ctx,cw,ch,textColor,fmt){
