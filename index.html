@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Mesh Radio Artwork Gen v1.8</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Mesh Radio Artwork Gen v1.9</title>
 <style>
 @font-face {
   font-family: 'NeueHaasDisplayRoman';
@@ -13,86 +13,92 @@
   font-family: 'NeueHaasDisplayThin';
   src: url('fonts/NeueHaasDisplayThin.ttf') format('truetype');
 }
+
 :root {
-  --mesh-green:#1db954;
-  --mesh-bg:#111;
+  --mesh-green: #1db954;
+  --mesh-bg: #111;
 }
 body {
-  background:var(--mesh-bg);
-  color:#fff;
-  font-family:'NeueHaasDisplayRoman',sans-serif;
-  margin:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
+  background: var(--mesh-bg);
+  color: #fff;
+  font-family: 'NeueHaasDisplayRoman', sans-serif;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 .container {
-  width:100%;
-  max-width:400px;
-  padding:20px;
-  box-sizing:border-box;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 h1 {
-  text-align:center;
-  font-size:1.5rem;
-  margin-bottom:1rem;
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
 }
-.step {display:none;margin-bottom:1rem;}
-.step.active {display:block;}
-input[type="text"],textarea,select,button {
-  width:100%;
-  font-size:1rem;
-  padding:10px;
-  margin-bottom:10px;
-  border:none;
-  border-radius:4px;
-  box-sizing:border-box;
-}
-textarea {height:120px;resize:vertical;}
+.step { display: none; margin-bottom: 1rem; }
+.step.active { display: block; }
+
+input[type="text"],
+textarea,
+select,
 button {
-  background:var(--mesh-green);
-  color:#fff;
-  cursor:pointer;
-  font-family:inherit;
+  width: 100%;
+  font-size: 1rem;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
-button:disabled {background:#555;cursor:not-allowed;}
+textarea { height: 120px; resize: vertical; }
+button {
+  background: var(--mesh-green);
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+button:disabled { background: #555; cursor: not-allowed; }
+
 .toggle-group {
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:10px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
 .toggle-group label {
-  flex:1;
-  text-align:center;
-  background:#333;
-  margin:0 5px;
-  padding:10px;
-  border-radius:4px;
-  cursor:pointer;
-  font-size:.95rem;
+  flex: 1;
+  text-align: center;
+  background: #333;
+  margin: 0 5px;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: .95rem;
 }
-.toggle-group input {display:none;}
-.toggle-group input:checked + label {background:var(--mesh-green);}
+.toggle-group input { display: none; }
+.toggle-group input:checked + label { background: var(--mesh-green); }
+
 canvas {
-  width:100%;
-  height:auto;
-  margin-bottom:10px;
-  border-radius:8px;
-  background:#000;
+  width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: #000;
 }
-@media(max-width:400px){.container{padding:10px;}}
+
+@media(max-width:400px){ .container{padding:10px;} }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>mesh radio – art gen v1.8</h1>
+  <h1>mesh radio – art gen v1.9</h1>
 
   <!-- STEP 1 -->
   <div id="step1" class="step active">
-    <select id="showPicker" disabled>
-      <option>Loading shows…</option>
-    </select>
+    <select id="showPicker" disabled><option>Loading shows…</option></select>
   </div>
 
   <!-- STEP 2 -->
@@ -135,9 +141,8 @@ canvas {
     <button id="generateTracklistBtn" disabled>Overlay Tracklist</button>
   </div>
 </div>
-
 <script>
-let templateLayers=[],shows=[],uploadedImageDataURL=null;
+let templateLayers = [], shows = [], uploadedImageDataURL = null;
 
 // ---------- LOADERS ----------
 async function loadFonts(){
@@ -195,6 +200,7 @@ function drawArtwork(){
   const textColor=document.querySelector('input[name="textColor"]:checked').value;
   const canvas=document.getElementById('artCanvas');
 
+  // format sizes
   if(fmt==='story'){canvas.width=1080;canvas.height=1920;}
   else if(fmt==='portrait'){canvas.width=1080;canvas.height=1350;}
   else{canvas.width=1080;canvas.height=1080;}
@@ -210,126 +216,174 @@ function drawArtwork(){
     const sx=(bg.naturalWidth-sw)/2,sy=(bg.naturalHeight-sh)/2;
     ctx.drawImage(bg,sx,sy,sw,sh,0,0,cw,ch);
 
-    // Fade + Line order
-    const fade=templateLayers.find(l=>/fade/i.test(l.name));
-    const line=templateLayers.find(l=>/line\s*\+\s*site/i.test(l.name));
-    const others=templateLayers.filter(l=>l.type==='image'&&![/fade/i,/line\s*\+\s*site/i,/logo/i].some(r=>r.test(l.name)));
-    const imgs=[fade,line,...others].filter(Boolean);
+    // --- Draw fade + line first (fade always under line) ---
+    const fade=templateLayers.find(l=>l.name==='Fade (img)');
+    const line=templateLayers.find(l=>l.name==='Line + Site (img)');
+    if(fade){const fimg=new Image();fimg.src=fade.imageURL;fimg.onload=()=>ctx.drawImage(fimg,0,ch-fimg.height);}
+    if(line){const limg=new Image();limg.src=line.imageURL;limg.onload=()=>ctx.drawImage(limg,0,ch-limg.height);}
 
-    let loaded=0;
-    imgs.forEach(l=>{
-      const img=new Image();img.src=l.imageURL;
-      img.onload=()=>{
-        ctx.globalAlpha=l.opacity||1;
-        let x=l.x||0,y=l.y||0;
-        if(fmt==='portrait')y=ch-img.height;
-        if(fmt==='story')y+=(extraH/1.5);
-        ctx.drawImage(img,x,y);
-        if(++loaded===imgs.length)drawTextAndOverlay(fmt,cw,ch,extraH,textColor);
-      };
-      img.onerror=()=>{if(++loaded===imgs.length)drawTextAndOverlay(fmt,cw,ch,extraH,textColor);};
-    });
+    // --- Then text & overlays ---
+    drawTextAndOverlay(fmt,cw,ch,extraH,textColor);
   };
 }
 function drawTextAndOverlay(fmt,cw,ch,extraH,textColor){
   const ctx=document.getElementById('artCanvas').getContext('2d');
-  const lines=templateLayers.filter(l=>l.type==='text');
   const show=shows[document.getElementById('showPicker').value];
-  const scaleM=(fmt==='story'?1.8:(fmt==='portrait'?1.2:1));
-  const shift=(fmt==='story'?extraH:(fmt==='portrait'?extraH/2:extraH));
+  const note=document.getElementById('customNoteInput').value.trim();
 
-  lines.forEach(l=>{
-    let txt='';
-    const key=l.name.toLowerCase();
-    if(key.includes('now playing'))txt=show['Now Playing'];
-    else if(key==='dj'){
-      const note=document.getElementById('customNoteInput').value.trim();
-      txt=show['DJ']+(note?' + '+note:'');
-    }else if(key.includes('date')){
-      txt=new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' @ '+show['A-B'];
-    }
-    const fs=(l.size||36)*scaleM;
-    const fam=(key==='dj'||key.includes('date'))?'NeueHaasDisplayThin':'NeueHaasDisplayRoman';
-    ctx.font=`${fs}px '${fam}'`;
-    ctx.fillStyle=textColor;
+  // ---- dynamic font scaling ----
+  const base=cw/1080;
+  const fsNow=60*base,fsDJ=50*base,fsDate=40*base;
 
-    let y=(l.y||0)+fs;
-    if(fmt==='portrait'){y=ch-240;} 
-    else if(fmt==='story'){y+=shift-120;}
-    else{y+=shift-60;} // square original alignment
+  const xPad=50*base;
+  let yBase;
+  if(fmt==='story')yBase=ch*0.65;
+  else if(fmt==='portrait')yBase=ch*0.83;
+  else yBase=ch*0.82;
 
-    ctx.fillText(txt,(l.x||0)+12,y);
-  });
+  ctx.textBaseline='top';
+  ctx.textAlign='left';
+  ctx.fillStyle=textColor;
 
-  // glass overlays scaled correctly
-  const ov=new Image();ov.src=textColor==='black'?'assets/black-mode.png':'assets/logo-for-post.png';
-  ov.onload=()=>{
-    ctx.save();
-    ctx.globalAlpha=0.5;
-    ctx.globalCompositeOperation='screen';
-    let ratio=(fmt==='portrait'?1.25:(fmt==='story'?1.8:1));
-    const w=cw*ratio,h=ch*ratio;
-    ctx.drawImage(ov,0,0,w,h);
-    ctx.restore();
+  // --- Story background glass morph overlay ---
+  if(fmt==='story'){
+    const overlay=new Image();overlay.src='assets/mesh-radio-overlay.png';
+    overlay.onload=()=>{
+      const ow=cw*0.9,oh=ow*(overlay.height/overlay.width);
+      const ox=(cw-ow)/2,oy=yBase-(oh*0.25);
+      ctx.save();
+      ctx.globalAlpha=0.55;
+      ctx.filter='blur(10px)';
+      ctx.drawImage(overlay,ox,oy,ow,oh);
+      ctx.restore();
+      drawText(); // draw after overlay
+    };
+    overlay.onerror=drawText;
+  }else drawText();
 
-    document.getElementById('downloadBtn').disabled=false;
-    const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
-    const date=new Date(show.Date).toISOString().split('T')[0];
-    const filename=`meshradio_${dj}_${date}_${fmt}.png`;
-    document.getElementById('downloadBtn').onclick=()=>downloadCanvasIOSSafe(filename);
-  };
+  function drawText(){
+    // Now Playing
+    ctx.font=`${fsNow}px 'NeueHaasDisplayRoman'`;
+    ctx.fillText(show['Now Playing'],xPad,yBase);
+
+    // DJ line (+ note)
+    ctx.font=`${fsDJ}px 'NeueHaasDisplayThin'`;
+    const djLine=show['DJ']+(note?' + '+note:'');
+    const djWidth=ctx.measureText(djLine).width;
+    ctx.fillText(djLine,xPad,yBase+fsNow+10*base);
+
+    // Date + Time
+    const dateStr=new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' @ '+show['A-B'];
+    ctx.font=`${fsDate}px 'NeueHaasDisplayThin'`;
+    ctx.fillText(dateStr,xPad,yBase+fsNow+fsDJ+30*base);
+
+    // top-right glass morph logo overlay
+    const logo=new Image();logo.src='assets/logo-for-post.png';
+    logo.onload=()=>{
+      const size=180*base,margin=40*base;
+      const x=cw-size-margin,y=margin;
+      ctx.save();
+      ctx.globalAlpha=0.25;
+      ctx.fillStyle='rgba(255,255,255,0.15)';
+      ctx.filter='blur(8px)';
+      ctx.fillRect(x-15,y-15,size+30,size+30);
+      ctx.filter='none';
+      ctx.globalAlpha=0.6;
+      ctx.drawImage(logo,x,y,size,size);
+      ctx.restore();
+      document.getElementById('downloadBtn').disabled=false;
+      setDownloadFilename(fmt,show);
+    };
+    logo.onerror=()=>{document.getElementById('downloadBtn').disabled=false;setDownloadFilename(fmt,show);};
+  }
 }
 
-// tracklist overlay reused unchanged
+// ---------- TRACKLIST OVERLAY ----------
 function overlayTracklist(){
   const fmt=document.querySelector('input[name="format"]:checked').value;
   const textColor=document.querySelector('input[name="textColor"]:checked').value;
   const canvas=document.getElementById('artCanvas');
   const ctx=canvas.getContext('2d');
   const cw=canvas.width,ch=canvas.height;
+
+  // blur bg
   const bg=new Image();bg.src=uploadedImageDataURL;
   bg.onload=()=>{
     const scale=Math.max(cw/bg.naturalWidth,ch/bg.naturalHeight);
     const sw=cw/scale,sh=ch/scale;
     const sx=(bg.naturalWidth-sw)/2,sy=(bg.naturalHeight-sh)/2;
-    ctx.save();ctx.filter='blur(30px)';ctx.drawImage(bg,sx,sy,sw,sh,-30,-30,cw+60,ch+60);ctx.restore();
-    ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(0,0,cw,ch);
-    const ov=new Image();ov.src=textColor==='black'?'assets/black-mode.png':'assets/tracklist-overlay-logo.png';
-    ov.onload=()=>{ctx.save();ctx.globalAlpha=0.6;ctx.globalCompositeOperation='screen';ctx.drawImage(ov,0,0,cw,ch);ctx.restore();drawTracklistInfo(ctx,cw,ch,textColor,fmt);};
+    ctx.save();ctx.filter='blur(30px)';
+    ctx.drawImage(bg,sx,sy,sw,sh,-30,-30,cw+60,ch+60);
+    ctx.restore();
+
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.fillRect(0,0,cw,ch);
+
+    const fade=templateLayers.find(l=>l.name==='Fade (img)');
+    const line=templateLayers.find(l=>l.name==='Line + Site (img)');
+    if(fade){const f=new Image();f.src=fade.imageURL;f.onload=()=>ctx.drawImage(f,0,ch-f.height);}
+    if(line){const l=new Image();l.src=line.imageURL;l.onload=()=>ctx.drawImage(l,0,ch-l.height);}
+
+    drawTracklistInfo(ctx,cw,ch,textColor,fmt);
   };
 }
-function drawTracklistInfo(ctx,cw,ch,textColor){
+
+// ---------- TRACKLIST TEXT ----------
+function drawTracklistInfo(ctx,cw,ch,textColor,fmt){
   const show=shows[document.getElementById('showPicker').value];
   ctx.save();ctx.fillStyle=textColor;ctx.textAlign='center';ctx.textBaseline='top';
-  ctx.font='36px NeueHaasDisplayRoman';ctx.fillText(show['Now Playing'],cw/2,20);
-  ctx.font='28px NeueHaasDisplayThin';const note=document.getElementById('customNoteInput').value.trim();
-  const djLine=show['DJ']+(note?' + '+note:'');ctx.fillText(djLine,cw/2,61);
+  ctx.font='40px NeueHaasDisplayRoman';
+  ctx.fillText(show['Now Playing'],cw/2,30);
+  ctx.font='30px NeueHaasDisplayThin';
+  const note=document.getElementById('customNoteInput').value.trim();
+  ctx.fillText(show['DJ']+(note?' + '+note:''),cw/2,80);
   ctx.font='24px NeueHaasDisplayThin';
   const dateStr=new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' @ '+show['A-B'];
-  ctx.fillText(dateStr,cw/2,94);ctx.restore();drawClippedTracklist(ctx,cw,ch);
+  ctx.fillText(dateStr,cw/2,115);
+  ctx.restore();
+
+  drawClippedTracklist(ctx,cw,ch);
+  document.getElementById('downloadBtn').disabled=false;
+  setDownloadFilename(fmt,show);
 }
+
 function drawClippedTracklist(ctx,cw,ch){
   const lines=document.getElementById('tracklistInput').value.split('\n').filter(l=>l.trim());
   if(!lines.length)return;
   let fontSize=30,lineHeight=fontSize*1.2;
   if(lines.length*lineHeight>ch*0.8){
-    fontSize=Math.floor((ch*0.8/lines.length)/1.2);lineHeight=fontSize*1.2;
+    fontSize=Math.floor((ch*0.8/lines.length)/1.2);
+    lineHeight=fontSize*1.2;
   }
   ctx.save();ctx.fillStyle='#fff';ctx.font=`${fontSize}px NeueHaasDisplayRoman`;
   ctx.textAlign='left';ctx.textBaseline='top';
   const widths=lines.map(l=>ctx.measureText(l).width);
   const maxW=Math.max(...widths);
-  const startX=(cw-maxW)/2;const totalH=lineHeight*lines.length;
+  const startX=(cw-maxW)/2;
+  const totalH=lineHeight*lines.length;
   const startY=(ch-totalH)/2;
-  lines.forEach((l,i)=>ctx.fillText(l,startX,startY+i*lineHeight));ctx.restore();
+  lines.forEach((l,i)=>ctx.fillText(l,startX,startY+i*lineHeight));
+  ctx.restore();
 }
 
-// iphone-safe download
-function isIOS(){const ua=navigator.userAgent||navigator.vendor||window.opera;
-  return /iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
+// ---------- DOWNLOAD HELPERS ----------
+function setDownloadFilename(fmt,show){
+  const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
+  const date=new Date(show.Date).toISOString().split('T')[0];
+  const filename=`meshradio_${dj}_${date}_${fmt}.png`;
+  document.getElementById('downloadBtn').onclick=()=>downloadCanvasIOSSafe(filename);
+}
+
+function isIOS(){
+  const ua=navigator.userAgent||navigator.vendor||window.opera;
+  const iOS=/iPad|iPhone|iPod/.test(ua);
+  const iPadOS=(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  return iOS||iPadOS;
+}
 function canvasToBlob(canvas,type='image/png',quality=1){
   return new Promise(resolve=>{
-    if(canvas.toBlob){canvas.toBlob(b=>resolve(b),type,quality);}else{
+    if(canvas.toBlob){canvas.toBlob(b=>resolve(b),type,quality);}
+    else{
       const dataURL=canvas.toDataURL(type,quality);
       const byteString=atob(dataURL.split(',')[1]);
       const mimeString=dataURL.split(',')[0].split(':')[1].split(';')[0];
@@ -346,18 +400,19 @@ async function downloadCanvasIOSSafe(filename){
   if(!blob)return;
   const file=new File([blob],filename,{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:'Mesh Radio Artwork',text:filename});return;}
-    catch(_){}
+    try{await navigator.share({files:[file],title:'Mesh Radio Artwork',text:filename});return;}catch(_){}
   }
   const url=URL.createObjectURL(blob);
   if(isIOS()){window.open(url,'_blank','noopener,noreferrer');setTimeout(()=>URL.revokeObjectURL(url),60000);}
-  else{const a=document.createElement('a');a.href=url;a.download=filename;
-    document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);}
+  else{
+    const a=document.createElement('a');a.href=url;a.download=filename;
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
+  }
 }
 
-// init
+// ---------- INIT ----------
 window.addEventListener('load',()=>{loadFonts().then(()=>loadTemplate().then(loadShowData));});
 </script>
 </body>
 </html>
-
