@@ -1,83 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>Mesh Radio Artwork Gen v1.7</title>
-<style>
-@font-face{font-family:'NeueHaasDisplayRoman';src:url('fonts/NeueHaasDisplayRoman.ttf')format('truetype');}
-@font-face{font-family:'NeueHaasDisplayThin';src:url('fonts/NeueHaasDisplayThin.ttf')format('truetype');}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mesh Radio Artwork Gen v1.7</title>
+  <style>
+    @font-face {
+      font-family: 'NeueHaasDisplayRoman';
+      src: url('fonts/NeueHaasDisplayRoman.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'NeueHaasDisplayThin';
+      src: url('fonts/NeueHaasDisplayThin.ttf') format('truetype');
+    }
 
-:root{--mesh-green:#1db954;--mesh-bg:#111;}
-body{background:var(--mesh-bg);color:#fff;font-family:'NeueHaasDisplayRoman',sans-serif;margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}
-.container{width:100%;max-width:400px;padding:20px;box-sizing:border-box;}
-h1{text-align:center;font-size:1.5rem;margin-bottom:1rem;}
-.step{display:none;margin-bottom:1rem;}
-.step.active{display:block;}
-input[type="text"],textarea,select,button{width:100%;font-size:1rem;padding:10px;margin-bottom:10px;border:none;border-radius:4px;box-sizing:border-box;}
-textarea{height:120px;resize:vertical;}
-button{background:var(--mesh-green);color:#fff;cursor:pointer;font-family:inherit;}
-button:disabled{background:#555;cursor:not-allowed;}
-.toggle-group{display:flex;justify-content:space-between;margin-bottom:10px;}
-.toggle-group label{flex:1;text-align:center;background:#333;margin:0 5px;padding:10px;border-radius:4px;cursor:pointer;font-size:.95rem;}
-.toggle-group input{display:none;}
-.toggle-group input:checked+label{background:var(--mesh-green);}
-canvas{width:100%;height:auto;margin-bottom:10px;border-radius:8px;background:#000;}
-@media(max-width:400px){.container{padding:10px;}}
-</style>
+    :root {
+      --mesh-green:#1db954;
+      --mesh-bg:#111;
+    }
+    body {
+      background:var(--mesh-bg);
+      color:#fff;
+      font-family:'NeueHaasDisplayRoman',sans-serif;
+      margin:0;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+    }
+    .container {
+      width:100%;
+      max-width:400px;
+      padding:20px;
+      box-sizing:border-box;
+    }
+    h1 {
+      font-size:1.5rem;
+      margin-bottom:1rem;
+      text-align:center;
+    }
+    .step {display:none;margin-bottom:1rem;}
+    .step.active {display:block;}
+    input[type="text"],textarea,select,button {
+      width:100%;
+      font-size:1rem;
+      padding:10px;
+      margin-bottom:10px;
+      border:none;
+      border-radius:4px;
+      box-sizing:border-box;
+    }
+    textarea {height:120px;resize:vertical;}
+    button {
+      background:var(--mesh-green);
+      color:#fff;
+      cursor:pointer;
+      font-family:inherit;
+    }
+    button:disabled {background:#555;cursor:not-allowed;}
+    .toggle-group {
+      display:flex;
+      justify-content:space-between;
+      margin-bottom:10px;
+    }
+    .toggle-group label {
+      flex:1;
+      text-align:center;
+      background:#333;
+      margin:0 5px;
+      padding:10px;
+      border-radius:4px;
+      cursor:pointer;
+      font-size:.95rem;
+    }
+    .toggle-group input {display:none;}
+    .toggle-group input:checked + label {background:var(--mesh-green);}
+    canvas {
+      width:100%;
+      height:auto;
+      margin-bottom:10px;
+      border-radius:8px;
+      background:#000;
+    }
+    @media(max-width:400px){.container{padding:10px;}}
+  </style>
 </head>
 <body>
-<div class="container">
-  <h1>mesh radio – art gen v1.7</h1>
+  <div class="container">
+    <h1>mesh radio – art gen v1.7</h1>
 
-  <!-- STEP 1 -->
-  <div id="step1" class="step active">
-    <select id="showPicker" disabled><option>Loading shows…</option></select>
-  </div>
-
-  <!-- STEP 2 -->
-  <div id="step2" class="step">
-    <input type="file" id="uploadInput" accept="image/*" />
-  </div>
-
-  <!-- STEP 3 -->
-  <div id="step3" class="step">
-    <div class="toggle-group">
-      <input type="radio" id="formatSquare" name="format" value="square" checked />
-      <label for="formatSquare">Post</label>
-      <input type="radio" id="formatPortrait" name="format" value="portrait" />
-      <label for="formatPortrait">Portrait</label>
-      <input type="radio" id="formatStory" name="format" value="story" />
-      <label for="formatStory">Story</label>
+    <!-- STEP 1 -->
+    <div id="step1" class="step active">
+      <select id="showPicker" disabled>
+        <option>Loading shows…</option>
+      </select>
     </div>
-    <div class="toggle-group">
-      <input type="radio" id="textWhite" name="textColor" value="white" checked />
-      <label for="textWhite">White Text</label>
-      <input type="radio" id="textBlack" name="textColor" value="black" />
-      <label for="textBlack">Black Text</label>
+
+    <!-- STEP 2 -->
+    <div id="step2" class="step">
+      <input type="file" id="uploadInput" accept="image/*" />
     </div>
-    <input type="text" id="customNoteInput" placeholder="Add Guest Here" />
-    <button id="generateBtn" disabled>Generate Artwork</button>
-    <button id="tracklistBtn" disabled>+ Tracklist</button>
-  </div>
 
-  <!-- STEP 4 -->
-  <div id="step4" class="step">
-    <canvas id="artCanvas" width="1080" height="1080"></canvas>
-    <button id="downloadBtn" disabled>Download</button>
-  </div>
+    <!-- STEP 3 -->
+    <div id="step3" class="step">
+      <div class="toggle-group">
+        <input type="radio" id="formatSquare" name="format" value="square" checked />
+        <label for="formatSquare">Post</label>
 
-  <!-- STEP 5 -->
-  <div id="step5" class="step">
-    <textarea id="tracklistInput" placeholder="Paste or type tracklist here…"></textarea>
-    <button id="generateTracklistBtn" disabled>Overlay Tracklist</button>
-  </div>
-</div>
+        <input type="radio" id="formatPortrait" name="format" value="portrait" />
+        <label for="formatPortrait">Portrait</label>
 
+        <input type="radio" id="formatStory" name="format" value="story" />
+        <label for="formatStory">Story</label>
+      </div>
+
+      <div class="toggle-group">
+        <input type="radio" id="textWhite" name="textColor" value="white" checked />
+        <label for="textWhite">White Text</label>
+
+        <input type="radio" id="textBlack" name="textColor" value="black" />
+        <label for="textBlack">Black Text</label>
+      </div>
+
+      <input type="text" id="customNoteInput" placeholder="Add Guest Here" />
+      <button id="generateBtn" disabled>Generate Artwork</button>
+      <button id="tracklistBtn" disabled>+ Tracklist</button>
+    </div>
+
+    <!-- STEP 4 -->
+    <div id="step4" class="step">
+      <canvas id="artCanvas" width="1080" height="1080"></canvas>
+      <button id="downloadBtn" disabled>Download</button>
+    </div>
+
+    <!-- STEP 5 -->
+    <div id="step5" class="step">
+      <textarea id="tracklistInput" placeholder="Paste or type tracklist here…"></textarea>
+      <button id="generateTracklistBtn" disabled>Overlay Tracklist</button>
+    </div>
+  </div>
 <script>
 let templateLayers=[],shows=[],uploadedImageDataURL=null;
 
-// ---------- LOADERS ----------
+// ---------- LOAD DATA ----------
 async function loadFonts(){
   const f1=new FontFace('NeueHaasDisplayRoman','url(fonts/NeueHaasDisplayRoman.ttf)');
   const f2=new FontFace('NeueHaasDisplayThin','url(fonts/NeueHaasDisplayThin.ttf)');
@@ -133,8 +198,6 @@ function drawArtwork(){
   const fmt=document.querySelector('input[name="format"]:checked').value;
   const textColor=document.querySelector('input[name="textColor"]:checked').value;
   const canvas=document.getElementById('artCanvas');
-
-  // Canvas size per format
   if(fmt==='story'){canvas.width=1080;canvas.height=1920;}
   else if(fmt==='portrait'){canvas.width=1080;canvas.height=1350;}
   else{canvas.width=1080;canvas.height=1080;}
@@ -150,37 +213,32 @@ function drawArtwork(){
     const sx=(bg.naturalWidth-sw)/2,sy=(bg.naturalHeight-sh)/2;
     ctx.drawImage(bg,sx,sy,sw,sh,0,0,cw,ch);
 
-    // keep only Fade, Line, Logo in that order
     const fade=templateLayers.find(l=>/fade/i.test(l.name));
     const line=templateLayers.find(l=>/line\s*\+\s*site/i.test(l.name));
     const logo=templateLayers.find(l=>/logo/i.test(l.name));
-    const others=templateLayers.filter(l=>l.type==='image'&&![/fade/i,/line\s*\+\s*site/i,/logo/i].some(r=>r.test(l.name)));
-    const imgs=[fade,line,logo,...others].filter(Boolean);
+    const imgs=[fade,line,logo].filter(Boolean);
 
     let loaded=0;
     imgs.forEach(l=>{
-      const img=new Image();
-      img.src=(fmt==='story'&&/line\s*\+\s*site/i.test(l.name))?'assets/line-+-site-story.png':l.imageURL;
+      const img=new Image();img.src=l.imageURL;
       img.onload=()=>{
         ctx.globalAlpha=l.opacity||1;
         let x=l.x||0,y=l.y||0;
-        if(fmt==='story'&&/fade|line\s*\+\s*site/i.test(l.name)) y+=extraH;
-        else if(fmt==='portrait'){y=ch-img.height;} // bottom-hug PNGs
+        if(fmt!=='square'){y=ch-img.height;} // hug bottom for portrait/story
         ctx.drawImage(img,x,y);
-        if(++loaded===imgs.length)drawTextAndOverlay(fmt,cw,ch,extraH,textColor);
+        if(++loaded===imgs.length)drawTextAndOverlay(fmt,cw,ch,textColor);
       };
-      img.onerror=()=>{if(++loaded===imgs.length)drawTextAndOverlay(fmt,cw,ch,extraH,textColor);};
+      img.onerror=()=>{if(++loaded===imgs.length)drawTextAndOverlay(fmt,cw,ch,textColor);};
     });
   };
 }
 
-// ---------- DRAW TEXT (portrait fix, no JS-logo) ----------
-function drawTextAndOverlay(fmt,cw,ch,extraH,textColor){
+// ---------- TEXT + GLASS OVERLAYS ----------
+function drawTextAndOverlay(fmt,cw,ch,textColor){
   const ctx=document.getElementById('artCanvas').getContext('2d');
   const lines=templateLayers.filter(l=>l.type==='text');
   const show=shows[document.getElementById('showPicker').value];
   const scaleM=(fmt==='story'?1.8:(fmt==='portrait'?1.2:1));
-  const shift=(fmt==='story'?extraH:(fmt==='portrait'?extraH/2:extraH));
 
   lines.forEach(l=>{
     let txt='';
@@ -192,55 +250,99 @@ function drawTextAndOverlay(fmt,cw,ch,extraH,textColor){
     }else if(key.includes('date')){
       txt=new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' @ '+show['A-B'];
     }
-
     const fs=(l.size||36)*scaleM;
     const fam=(key==='dj'||key.includes('date'))?'NeueHaasDisplayThin':'NeueHaasDisplayRoman';
     ctx.font=`${fs}px '${fam}'`;
     ctx.fillStyle=textColor;
 
     let y=(l.y||0)+fs;
-    if(fmt==='story'){y+=shift-140;}
-    else if(fmt==='portrait'){y+=shift+120;} // pushed lower for portrait
-    else{y+=shift-20;}
+    if(fmt==='story'){y+=200;}
+    else if(fmt==='portrait'){y+=80;}
+    else{y+=40;}
     ctx.fillText(txt,(l.x||0)+12,y);
   });
 
-  // enable download
-  const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
-  const date=new Date(show.Date).toISOString().split('T')[0];
-  const filename=`meshradio_${dj}_${date}_${fmt}.png`;
-  document.getElementById('downloadBtn').disabled=false;
-  document.getElementById('downloadBtn').onclick=()=>downloadCanvasIOSSafe(filename);
+  // Glass morph overlays reused in all modes
+  const ov=new Image();ov.src=textColor==='black'?'assets/black-mode.png':'assets/logo-for-post.png';
+  ov.onload=()=>{
+    ctx.save();
+    ctx.globalAlpha=textColor==='black'?0.7:0.5;
+    ctx.globalCompositeOperation='screen';
+    ctx.drawImage(ov,0,0,cw,ch);
+    ctx.restore();
+
+    const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
+    const date=new Date(show.Date).toISOString().split('T')[0];
+    const filename=`meshradio_${dj}_${date}_${fmt}.png`;
+    document.getElementById('downloadBtn').disabled=false;
+    document.getElementById('downloadBtn').onclick=()=>downloadCanvasIOSSafe(filename);
+  };
+}
+// ---------- TRACKLIST ----------
+function overlayTracklist(){
+  const fmt=document.querySelector('input[name="format"]:checked').value;
+  const textColor=document.querySelector('input[name="textColor"]:checked').value;
+  const canvas=document.getElementById('artCanvas');
+  const ctx=canvas.getContext('2d');
+  const cw=canvas.width,ch=canvas.height;
+
+  const bg=new Image();bg.src=uploadedImageDataURL;
+  bg.onload=()=>{
+    const scale=Math.max(cw/bg.naturalWidth,ch/bg.naturalHeight);
+    const sw=cw/scale,sh=ch/scale;
+    const sx=(bg.naturalWidth-sw)/2,sy=(bg.naturalHeight-sh)/2;
+    ctx.save();ctx.filter='blur(30px)';
+    ctx.drawImage(bg,sx,sy,sw,sh,-30,-30,cw+60,ch+60);
+    ctx.restore();
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.fillRect(0,0,cw,ch);
+
+    // Glass overlay identical to square mode
+    const overlays=[{src:textColor==='black'?'assets/black-mode.png':'assets/tracklist-overlay-logo.png',alpha:0.6,comp:'screen'}];
+    let done=0;
+    overlays.forEach(o=>{
+      const img=new Image();img.src=o.src;
+      img.onload=()=>{
+        ctx.save();ctx.globalAlpha=o.alpha;ctx.globalCompositeOperation=o.comp;
+        ctx.drawImage(img,0,0,cw,ch);ctx.restore();
+        if(++done===overlays.length)drawTracklistInfo(ctx,cw,ch,textColor,fmt);
+      };
+      img.onerror=()=>{if(++done===overlays.length)drawTracklistInfo(ctx,cw,ch,textColor,fmt);};
+    });
+  };
 }
 
-
-// ---------- DRAW TRACKLIST INFO ----------
+// ---------- TRACKLIST TEXT ----------
 function drawTracklistInfo(ctx,cw,ch,textColor,fmt){
   const show=shows[document.getElementById('showPicker').value];
   ctx.save();
   ctx.fillStyle=textColor;
-  ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.textAlign='center';
+  ctx.textBaseline='top';
   ctx.font='36px NeueHaasDisplayRoman';
   ctx.fillText(show['Now Playing'],cw/2,20);
+
   ctx.font='28px NeueHaasDisplayThin';
   const note=document.getElementById('customNoteInput').value.trim();
   const djLine=show['DJ']+(note?' + '+note:'');
   ctx.fillText(djLine,cw/2,61);
+
   ctx.font='24px NeueHaasDisplayThin';
   const dateStr=new Date(show.Date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' @ '+show['A-B'];
   ctx.fillText(dateStr,cw/2,61+33);
   ctx.restore();
 
   drawClippedTracklist(ctx,cw,ch);
+
   document.getElementById('downloadBtn').disabled=false;
   const dj=(show['DJ']||'dj').replace(/[^a-z0-9]/gi,'_');
   const date=new Date(show.Date).toISOString().split('T')[0];
-  const format=document.querySelector('input[name="format"]:checked').value;
-  const filename=`meshradio_${dj}_${date}_${format}.png`;
+  const fmtSel=document.querySelector('input[name="format"]:checked').value;
+  const filename=`meshradio_${dj}_${date}_${fmtSel}.png`;
   document.getElementById('downloadBtn').onclick=()=>downloadCanvasIOSSafe(filename);
 }
 
-// ---------- RENDER TRACKLIST TEXT ----------
+// ---------- MULTILINE TRACKLIST ----------
 function drawClippedTracklist(ctx,cw,ch){
   const lines=document.getElementById('tracklistInput').value.split('\n').filter(l=>l.trim());
   if(!lines.length)return;
@@ -252,7 +354,8 @@ function drawClippedTracklist(ctx,cw,ch){
   ctx.save();
   ctx.fillStyle='#fff';
   ctx.font=`${fontSize}px NeueHaasDisplayRoman`;
-  ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.textAlign='left';
+  ctx.textBaseline='top';
   const widths=lines.map(l=>ctx.measureText(l).width);
   const maxW=Math.max(...widths);
   const startX=(cw-maxW)/2;
@@ -265,7 +368,9 @@ function drawClippedTracklist(ctx,cw,ch){
 // ---------- iPHONE-SAFE DOWNLOAD ----------
 function isIOS(){
   const ua=navigator.userAgent||navigator.vendor||window.opera;
-  return /iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const iOS=/iPad|iPhone|iPod/.test(ua);
+  const iPadOS=(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  return iOS||iPadOS;
 }
 function canvasToBlob(canvas,type='image/png',quality=1){
   return new Promise(resolve=>{
@@ -285,10 +390,15 @@ async function downloadCanvasIOSSafe(filename){
   const canvas=document.getElementById('artCanvas');
   const blob=await canvasToBlob(canvas,'image/png',1);
   if(!blob)return;
+
   const file=new File([blob],filename,{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:'Mesh Radio Artwork',text:filename});return;}catch(_){}
+    try{
+      await navigator.share({files:[file],title:'Mesh Radio Artwork',text:filename});
+      return;
+    }catch(_){}
   }
+
   const url=URL.createObjectURL(blob);
   if(isIOS()){
     window.open(url,'_blank','noopener,noreferrer');
@@ -302,7 +412,9 @@ async function downloadCanvasIOSSafe(filename){
 }
 
 // ---------- INIT ----------
-window.addEventListener('load',()=>{loadFonts().then(()=>loadTemplate().then(loadShowData));});
+window.addEventListener('load',()=>{
+  loadFonts().then(()=>loadTemplate().then(loadShowData));
+});
 </script>
 </body>
 </html>
